@@ -1,9 +1,9 @@
+use crate::core::python::{PythonService, PYTHON_SERVICE};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use tauri::{command, AppHandle, Manager};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -105,47 +105,83 @@ fn get_upload_dir(app_handle: &AppHandle) -> Result<PathBuf, String> {
     Ok(PathBuf::from(&upload_dir_rel))
 }
 
+// #[command]
+// pub async fn process_image(image_path: String) -> Result<ModelResult, String> {
+//     println!("开始处理图像: {}", image_path);
+
+//     // 确保图像路径是绝对路径，并使用系统标准分隔符
+//     let image_abs_path = to_absolute_path(&image_path);
+
+//     // 获取配置的绝对路径
+//     //todo: python_executable环境变量读取错误
+//     let python_executable = get_python_executable();
+//     let script_abs_path = get_script_path();
+//     let model_abs_path = get_model_path();
+
+//     // 执行Python脚本，传递绝对路径参数
+//     let output = Command::new(&python_executable)
+//         .arg(&script_abs_path)
+//         .arg(&image_abs_path)
+//         .arg(&model_abs_path)
+//         .output()
+//         .map_err(|e| format!("执行Python脚本失败: {}", e))?;
+
+//     // 解析输出
+//     let stdout = String::from_utf8(output.stdout).map_err(|e| format!("无法解析输出: {}", e))?;
+
+//     // 如果存在错误输出，记录它
+//     if !output.stderr.is_empty() {
+//         let stderr = String::from_utf8_lossy(&output.stderr);
+//         println!("Python脚本警告/错误: {}", stderr);
+//     }
+
+//     // JSON解析
+//     match serde_json::from_str(&stdout) {
+//         Ok(result) => Ok(result),
+//         Err(e) => {
+//             println!("JSON解析失败: {}", e);
+//             println!("原始输出: {}", stdout);
+//             Err(format!("结果解析失败: {}", e))
+//         }
+//     }
+// }
 #[command]
 pub async fn process_image(image_path: String) -> Result<ModelResult, String> {
-    println!("开始处理图像: {}", image_path);
-
-    // 确保图像路径是绝对路径，并使用系统标准分隔符
+    println!("处理图像: {}", image_path);
     let image_abs_path = to_absolute_path(&image_path);
 
-    // 获取配置的绝对路径
-    //todo: python_executable环境变量读取错误
+    // 获取Python服务的配置
     let python_executable = get_python_executable();
     let script_abs_path = get_script_path();
     let model_abs_path = get_model_path();
 
-    // 执行Python脚本，传递绝对路径参数
-    let output = Command::new(&python_executable)
-        .arg(&script_abs_path)
-        .arg(&image_abs_path)
-        .arg(&model_abs_path)
-        .output()
-        .map_err(|e| format!("执行Python脚本失败: {}", e))?;
+    // 获取或初始化Python服务
+    let mut service_lock = PYTHON_SERVICE.lock().map_err(|_| "无法获取Python服务锁")?;
 
-    // 解析输出
-    let stdout = String::from_utf8(output.stdout).map_err(|e| format!("无法解析输出: {}", e))?;
-
-    // 如果存在错误输出，记录它
-    if !output.stderr.is_empty() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        println!("Python脚本警告/错误: {}", stderr);
+    if service_lock.is_none() {
+        *service_lock = Some(PythonService::new(
+            python_executable,
+            script_abs_path,
+            model_abs_path,
+        ));
     }
 
-    // JSON解析
-    match serde_json::from_str(&stdout) {
+    // 使用服务处理图像
+    let result = service_lock
+        .as_mut()
+        .unwrap()
+        .process_image(&image_abs_path)?;
+
+    // 解析JSON响应
+    match serde_json::from_str(&result) {
         Ok(result) => Ok(result),
         Err(e) => {
             println!("JSON解析失败: {}", e);
-            println!("原始输出: {}", stdout);
+            println!("原始输出: {}", result);
             Err(format!("结果解析失败: {}", e))
         }
     }
 }
-
 #[command]
 pub async fn save_uploaded_image(
     app_handle: AppHandle,
