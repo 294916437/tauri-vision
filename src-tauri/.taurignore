@@ -1,0 +1,5 @@
+# 忽略上传目录中的所有文件变化
+uploads/
+uploads/**/*
+resources/
+

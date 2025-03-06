@@ -1,0 +1,50 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Rust / Tauri 相关
+/target
+/src-tauri/target
+/src-tauri/Cargo.lock
+/src-tauri/WixTools
+**/*.rs.bk
+*.pdb
+.cargo-ok
+
+# 构建产物
+/src-tauri/icons/icons
+
+# 环境变量文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 可能的其他构建产物
+*.dmg
+*.exe
+*.msi
+*.app
+*.out
