@@ -1,9 +1,3 @@
-### My personal tauri app for learning rust language
+# tauri-vision
 
-:smile:
-
-### new features
-
-- local model which can classify the image type(to be upgraded soon)
-- front-end using Next.js and React UI
--
+A desktop application about image vision classification
