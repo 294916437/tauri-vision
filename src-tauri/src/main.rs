@@ -3,9 +3,13 @@
 
 extern crate lazy_static;
 
-mod core;
-use core::api::{process_image, save_uploaded_image};
-use core::python::start_cleanup_thread;
+mod commands;
+mod models;
+mod services;
+mod utils;
+use commands::file_management::save_uploaded_image;
+use commands::image_processing::process_image;
+use services::python::start_cleanup_thread;
 
 fn main() {
     // 启动清理线程
