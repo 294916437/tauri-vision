@@ -1,6 +1,11 @@
 import { useState } from "react";
-import { RustModelResult, isErrorResult, ModelResult, isInferenceResult } from "@/lib/types";
 import { invoke } from "@tauri-apps/api/core";
+import { ModelResult, RustModelResult } from "@/lib/types";
+
+// 辅助函数来检查返回结果类型
+function isErrorResult(result: any): result is { error: string } {
+  return result && typeof result.error === "string";
+}
 
 interface UseImageRecognitionReturn {
   isProcessing: boolean;
@@ -46,11 +51,12 @@ export function useImageRecognition(): UseImageRecognitionReturn {
         const errorMsg = rustResult.error || "处理失败，未知错误";
         setError(errorMsg);
         setResult({ error: errorMsg });
-      } else if (isInferenceResult(rustResult)) {
+      } else {
         // 转换后端结果格式为前端使用的格式
-        const matches = Object.entries(rustResult.class_probabilities)
-          .map(([label, confidence]) => ({ label, confidence }))
-          .sort((a, b) => b.confidence - a.confidence);
+        const matches = rustResult.top_predictions.map((pred) => ({
+          label: pred.class,
+          confidence: pred.probability,
+        }));
 
         setResult({
           matches,
@@ -58,9 +64,8 @@ export function useImageRecognition(): UseImageRecognitionReturn {
             label: rustResult.prediction,
             confidence: rustResult.confidence,
           },
+          modelType: rustResult.model_type,
         });
-      } else {
-        throw new Error("后端返回了无效的数据格式");
       }
     } catch (err: any) {
       console.error("图像识别过程中出错:", err);

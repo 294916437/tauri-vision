@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
-import Dashboard from "@/pages/Dashboard";
 import { ImageRecognition } from "@/pages/ImageRecognition";
+import Dashboard from "@/pages/Dashboard";
 import Layout from "@/components/Layout";
-
+import ModelSettings from "@/pages/ModelSettings";
 function App() {
   return (
     <ThemeProvider defaultTheme='system' storageKey='vision-match-theme'>
@@ -12,6 +12,7 @@ function App() {
           <Route path='/' element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path='recognition' element={<ImageRecognition />} />
+            <Route path='models' element={<ModelSettings />} />
           </Route>
         </Routes>
       </BrowserRouter>
