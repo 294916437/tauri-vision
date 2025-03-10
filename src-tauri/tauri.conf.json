@@ -43,6 +43,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["resources/python/*", "resources/model/*"]
+    "resources": ["resources/scripts/*", "resources/models/*"]
   }
 }

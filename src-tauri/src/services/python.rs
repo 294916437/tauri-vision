@@ -1,137 +1,139 @@
+use lazy_static::lazy_static;
 use std::io::{BufRead, BufReader, Write};
 use std::process::{Child, Command, Stdio};
-use std::sync::{Arc, Mutex};
-use std::thread;
+use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
+lazy_static! {
+    pub static ref PYTHON_SERVICE: Mutex<Option<PythonService>> = Mutex::new(None);
+}
+
 pub struct PythonService {
-    process: Option<Child>,
-    last_used: Instant,
-    executable_path: String,
-    script_path: String,
-    model_path: String,
+    child: Child,
+    python_executable: String,
+    current_script: String,
+    current_model: String,
 }
 
 impl PythonService {
-    pub fn new(executable_path: String, script_path: String, model_path: String) -> Self {
-        Self {
-            process: None,
-            last_used: Instant::now(),
-            executable_path,
-            script_path,
-            model_path,
-        }
-    }
-
-    pub fn ensure_running(&mut self) -> Result<(), String> {
-        if self.process.is_none() || self.is_process_dead() {
-            self.start_process()?;
-        }
-        self.last_used = Instant::now();
-        Ok(())
-    }
-
-    fn is_process_dead(&mut self) -> bool {
-        if let Some(ref mut process) = self.process {
-            match process.try_wait() {
-                Ok(Some(_)) => true,
-                Ok(None) => false,
-                Err(_) => true,
-            }
-        } else {
-            true
-        }
-    }
-
-    fn start_process(&mut self) -> Result<(), String> {
-        println!("启动Python服务...");
-        let process = Command::new(&self.executable_path)
-            .arg(&self.script_path)
-            .arg("--server") // 添加服务模式标志
-            .arg(&self.model_path)
+    pub fn new(python_executable: String, script_path: String, model_path: String) -> Self {
+        let mut command = Command::new(&python_executable);
+        command
+            .arg(&script_path)
+            .arg("--server")
+            .arg(&model_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .map_err(|e| format!("无法启动Python服务: {}", e))?;
+            .stderr(Stdio::piped());
 
-        println!("Python服务已启动");
-        self.process = Some(process);
+        println!("启动Python进程: {:?}", command);
 
-        // 简单等待服务准备就绪
-        thread::sleep(Duration::from_secs(2));
-        Ok(())
+        let mut child = command.spawn().expect("无法启动Python进程");
+
+        // 使用take()代替expect()，这样不会部分移动child
+        if let Some(stderr) = child.stderr.take() {
+            std::thread::spawn(move || {
+                let reader = BufReader::new(stderr);
+                for line in reader.lines() {
+                    if let Ok(line) = line {
+                        println!("Python stderr: {}", line);
+                    }
+                }
+            });
+        }
+
+        let service = PythonService {
+            child,
+            python_executable,
+            current_script: script_path,
+            current_model: model_path,
+        };
+
+        // 等待服务启动
+        std::thread::sleep(Duration::from_secs(1));
+
+        service
     }
 
     pub fn process_image(&mut self, image_path: &str) -> Result<String, String> {
-        self.ensure_running()?;
+        let start = Instant::now();
 
-        let process = self.process.as_mut().unwrap();
-
-        // 写入命令到Python进程
-        let mut stdin = process.stdin.take().ok_or("无法获取stdin")?;
+        let stdin = self.child.stdin.as_mut().ok_or("无法获取子进程stdin")?;
         let command = format!("process_image:{}\n", image_path);
         stdin
             .write_all(command.as_bytes())
-            .map_err(|e| format!("写入失败: {}", e))?;
-        process.stdin = Some(stdin);
+            .map_err(|e| e.to_string())?;
+        stdin.flush().map_err(|e| e.to_string())?;
 
         // 读取输出
-        let mut reader = BufReader::new(process.stdout.take().ok_or("无法获取stdout")?);
-        let mut result = String::new();
-        reader
-            .read_line(&mut result)
-            .map_err(|e| format!("读取失败: {}", e))?;
-        process.stdout = Some(reader.into_inner());
+        let stdout = self.child.stdout.as_mut().ok_or("无法获取子进程stdout")?;
+        let mut reader = BufReader::new(stdout);
+        let mut output = String::new();
+        reader.read_line(&mut output).map_err(|e| e.to_string())?;
 
-        Ok(result.trim().to_string())
+        let duration = start.elapsed();
+        println!("图像处理耗时: {:?}", duration);
+
+        Ok(output.trim().to_string())
     }
 
-    pub fn shutdown(&mut self) {
-        if let Some(ref mut process) = self.process {
-            // 发送退出命令
-            if let Some(mut stdin) = process.stdin.take() {
-                let _ = stdin.write_all(b"exit\n");
-            }
-
-            // 给进程一些时间来清理
-            thread::sleep(Duration::from_millis(500));
-
-            // 强制终止进程
-            let _ = process.kill();
-            let _ = process.wait();
-            println!("Python服务已关闭");
+    // 修复switch_model方法中的相同问题
+    pub fn switch_model(&mut self, script_path: &str, model_path: &str) -> Result<(), String> {
+        // 如果脚本和模型都没变，无需重启
+        if self.current_script == script_path && self.current_model == model_path {
+            return Ok(());
         }
+
+        println!("切换模型: 脚本={}, 模型={}", script_path, model_path);
+
+        // 终止当前进程
+        if let Err(e) = self.child.kill() {
+            println!("终止Python进程时出错: {}", e);
+        }
+
+        // 启动新进程
+        let mut command = Command::new(&self.python_executable);
+        command
+            .arg(script_path)
+            .arg("--server")
+            .arg(model_path)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+
+        println!("重启Python进程: {:?}", command);
+
+        let mut child = command.spawn().expect("无法启动Python进程");
+
+        // 使用take()代替expect()
+        if let Some(stderr) = child.stderr.take() {
+            std::thread::spawn(move || {
+                let reader = BufReader::new(stderr);
+                for line in reader.lines() {
+                    if let Ok(line) = line {
+                        println!("Python stderr: {}", line);
+                    }
+                }
+            });
+        }
+
+        // 更新当前服务状态
+        self.child = child;
+        self.current_script = script_path.to_string();
+        self.current_model = model_path.to_string();
+
+        // 等待服务启动
+        std::thread::sleep(Duration::from_secs(1));
+
+        Ok(())
     }
 }
 
 impl Drop for PythonService {
     fn drop(&mut self) {
-        self.shutdown();
-    }
-}
-
-// 全局单例服务
-lazy_static::lazy_static! {
-    pub static ref PYTHON_SERVICE: Arc<Mutex<Option<PythonService>>> = Arc::new(Mutex::new(None));
-}
-
-// 启动自动清理线程
-pub fn start_cleanup_thread() {
-    let service = PYTHON_SERVICE.clone();
-    thread::spawn(move || {
-        loop {
-            thread::sleep(Duration::from_secs(300)); // 5分钟检查一次
-
-            let mut service_lock = service.lock().unwrap();
-            if let Some(ref mut python_service) = *service_lock {
-                // 如果30分钟未使用，关闭服务
-                if python_service.last_used.elapsed() > Duration::from_secs(1800) {
-                    println!("Python服务长时间未使用，关闭中...");
-                    python_service.shutdown();
-                    *service_lock = None;
-                }
-            }
+        // 终止Python进程
+        if let Err(e) = self.child.kill() {
+            println!("终止Python进程时出错: {}", e);
         }
-    });
+    }
 }
