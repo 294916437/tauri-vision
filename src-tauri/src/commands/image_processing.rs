@@ -1,5 +1,6 @@
+use crate::config::constants;
+use crate::config::models::MODEL_REGISTRY;
 use crate::models::inference_result::ModelResult;
-use crate::services::model_manager::MODEL_REGISTRY;
 use crate::services::python::{PythonService, PYTHON_SERVICE};
 use crate::utils::path_utils::to_absolute_path;
 use serde_json;
@@ -28,20 +29,17 @@ pub async fn process_image(image_path: String) -> Result<ModelResult, String> {
     let mut service_lock = PYTHON_SERVICE.lock().map_err(|_| "无法获取Python服务锁")?;
 
     if service_lock.is_none() {
-        // 获取Python可执行文件路径
-        let python_executable = std::env::var("PYTHON_EXECUTABLE").unwrap_or_else(|_| {
-            if cfg!(target_os = "windows") {
-                "python".to_string()
-            } else {
-                "python3".to_string()
-            }
-        });
+        // 使用常量配置获取Python路径
+        let python_executable = &constants::get_config().python_executable;
 
-        println!("初始化Python服务，使用模型: {}", active_model.name);
+        println!(
+            "初始化Python服务，使用Python: {}, 模型: {}",
+            python_executable, active_model.name
+        );
 
         // 创建新的Python服务
         *service_lock = Some(PythonService::new(
-            python_executable,
+            python_executable.clone(),
             script_abs_path,
             model_abs_path,
         ));
@@ -59,7 +57,6 @@ pub async fn process_image(image_path: String) -> Result<ModelResult, String> {
         .as_mut()
         .unwrap()
         .process_image(&image_abs_path)?;
-
     // 解析JSON响应
     match serde_json::from_str::<ModelResult>(&result) {
         Ok(mut model_result) => {

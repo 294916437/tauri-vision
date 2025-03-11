@@ -56,8 +56,6 @@ impl PythonService {
     }
 
     pub fn process_image(&mut self, image_path: &str) -> Result<String, String> {
-        let start = Instant::now();
-
         let stdin = self.child.stdin.as_mut().ok_or("无法获取子进程stdin")?;
         let command = format!("process_image:{}\n", image_path);
         stdin
@@ -70,9 +68,6 @@ impl PythonService {
         let mut reader = BufReader::new(stdout);
         let mut output = String::new();
         reader.read_line(&mut output).map_err(|e| e.to_string())?;
-
-        let duration = start.elapsed();
-        println!("图像处理耗时: {:?}", duration);
 
         Ok(output.trim().to_string())
     }

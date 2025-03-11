@@ -49,14 +49,14 @@ impl ModelRegistry {
             description: "用于识别中医药材的专用模型，包含上百种药材".to_string(),
             path: "resources/models/medicine_model.pth".to_string(),
             model_type: "MobileNetV3-Small".to_string(),
-            num_classes: 160,
+            num_classes: 163,
             script_path: "resources/scripts/medicine_val.py".to_string(),
             is_active: false,
         };
         self.models.insert(medicine_id.clone(), medicine_model);
 
         // 设置默认活跃模型
-        self.active_model_id = cifar_id;
+        self.active_model_id = medicine_id;
     }
 
     pub fn get_models(&self) -> Vec<ModelInfo> {

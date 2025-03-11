@@ -1,17 +1,18 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TopPrediction {
-    pub class: String,
-    pub probability: f32,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelResult {
+    /// 模型预测的主要结果类别
     pub prediction: String,
+
+    /// 预测结果的置信度
     pub confidence: f32,
-    pub top_predictions: Vec<TopPrediction>,
-    // 可选字段，用于区分不同模型的结果
+
+    /// 类别概率映射，包含置信度最高的N个类别
+    pub class_probabilities: HashMap<String, f32>,
+
+    /// 模型类型信息，可选
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model_type: Option<String>,
 }

@@ -1,5 +1,5 @@
+use crate::config::models::MODEL_REGISTRY;
 use crate::models::inference_result::{AvailableModels, ModelInfo};
-use crate::services::model_manager::MODEL_REGISTRY;
 use crate::services::python::PYTHON_SERVICE;
 use crate::utils::path_utils::to_absolute_path;
 use tauri::command;

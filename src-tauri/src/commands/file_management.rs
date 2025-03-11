@@ -1,11 +1,11 @@
-use crate::utils::env_utils::get_env_var;
+use crate::config::constants;
 use std::fs;
 use std::path::PathBuf;
 use tauri::{command, AppHandle, Manager};
 
 /// 获取上传目录
 fn get_upload_dir(app_handle: &AppHandle) -> Result<PathBuf, String> {
-    let upload_dir_rel = get_env_var("UPLOAD_DIR", "uploads");
+    let upload_dir_rel = &constants::get_config().upload_dir;
 
     // 获取可能的基础目录
     let base_dirs = [

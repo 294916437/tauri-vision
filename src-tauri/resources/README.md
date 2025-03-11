@@ -6,15 +6,15 @@
 
 ```
 resources/
-├── model/               # 存放机器学习模型
-│   └── result_improved.pth  # 模型文件
-└── python/              # Python脚本
+├── models/               # 存放机器学习模型
+│   └── result_model.pth  # 模型文件
+└── scripts/              # Python脚本
     └── inference.py     # 推理脚本
 ```
 
 ## 模型文件
 
-请将训练好的 PyTorch 模型文件 `result_improved.pth` 放置在 `model` 目录中。
+请将训练好的 PyTorch 模型文件 `result_model.pth` 放置在 `models` 目录中。
 
 ## Python 脚本
 
@@ -36,12 +36,3 @@ resources/
   }
 }
 ```
-
-## 环境变量
-
-应用会尝试使用以下环境变量:
-
-- `PYTHON_EXECUTABLE_PATH`: Python 可执行文件的完整路径
-- `PYTHON_VENV_PATH`: Python 虚拟环境路径（如果使用虚拟环境）
-
-如果未设置这些变量，应用将尝试使用系统默认的 Python 解释器。

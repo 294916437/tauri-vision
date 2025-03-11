@@ -5,7 +5,6 @@ from PIL import Image
 import json
 import torchvision.models as models
 import argparse
-import time
 
 # 全局变量存储模型
 model = None
@@ -15,7 +14,6 @@ class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', '
 def load_model(model_path):
     global model
     if model is None:
-        print(f"加载模型: {model_path}", file=sys.stderr)
         # 加载模型架构 - 与训练时保持一致
         model = models.resnet34(weights=None)
         num_ftrs = model.fc.in_features
@@ -79,11 +77,8 @@ def run_server(model_path):
             if line.startswith("process_image:"):
                 image_path = line[len("process_image:"):]
                 try:
-                    start_time = time.time()
                     image_tensor = preprocess_image(image_path)
                     result = predict(image_tensor)
-                    end_time = time.time()
-                    print(f"推理耗时: {(end_time - start_time)*1000:.2f}ms", file=sys.stderr)
                     print(json.dumps(result))
                     sys.stdout.flush()  # 确保输出被立即发送
                 except Exception as e:
