@@ -3,19 +3,25 @@ export interface TopPrediction {
   class: string;
   probability: number;
 }
-
+// Rust后端返回的结果类型
 export interface RustModelResult {
   prediction: string;
   confidence: number;
-  top_predictions: TopPrediction[];
+  class_probabilities: Record<string, number>;
   model_type?: string;
-  error?: string; // 用于错误处理
+  error?: string;
 }
 
 // 前端使用的类型
 export interface ModelResult {
-  matches?: { label: string; confidence: number }[];
-  topPrediction?: { label: string; confidence: number };
+  matches?: {
+    label: string;
+    confidence: number;
+  }[];
+  topPrediction?: {
+    label: string;
+    confidence: number;
+  };
   modelType?: string;
   error?: string;
 }

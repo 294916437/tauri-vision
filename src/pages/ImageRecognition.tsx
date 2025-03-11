@@ -127,6 +127,7 @@ export function ImageRecognition() {
 
           <CardFooter>
             <Button
+              variant='default'
               type='submit'
               disabled={!imageFile || isProcessing}
               onClick={handleSubmit}
@@ -213,7 +214,7 @@ export function ImageRecognition() {
                 <AlertDescription>{result.error}</AlertDescription>
               </Alert>
             ) : (
-              <div className='flex h-full flex-col items-center justify-center text-center text-muted-foreground'>
+              <div className='flex h-full mt-20 flex-col items-center justify-center text-center text-muted-foreground'>
                 <ImageIcon className='mb-2 h-10 w-10' strokeOpacity={0.7} />
                 <p>请上传一张图像并点击"开始识别"</p>
               </div>

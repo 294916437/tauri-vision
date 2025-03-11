@@ -33,7 +33,7 @@ export default function ModelSettings() {
       )}
 
       <div className='flex items-center gap-4'>
-        <span className='text-sm font-medium'>当前模型:</span>
+        <span className='text-sm font-medium mr-3'>当前模型:</span>
         <ModelSelector
           models={models}
           activeModelId={activeModelId}

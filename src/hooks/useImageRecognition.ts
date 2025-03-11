@@ -37,14 +37,10 @@ export function useImageRecognition(): UseImageRecognitionReturn {
         fileName: file.name,
       });
 
-      console.log("图像保存路径:", imagePath);
-
       // 调用Rust后端进行图像处理
       const rustResult = await invoke<RustModelResult>("process_image", {
         imagePath,
       });
-
-      console.log("处理结果:", rustResult);
 
       // 处理结果
       if (isErrorResult(rustResult)) {
@@ -52,11 +48,13 @@ export function useImageRecognition(): UseImageRecognitionReturn {
         setError(errorMsg);
         setResult({ error: errorMsg });
       } else {
-        // 转换后端结果格式为前端使用的格式
-        const matches = rustResult.top_predictions.map((pred) => ({
-          label: pred.class,
-          confidence: pred.probability,
-        }));
+        // 将 class_probabilities 对象转换为排序后的数组格式
+        const matches = Object.entries(rustResult.class_probabilities).map(
+          ([label, confidence]) => ({
+            label,
+            confidence: confidence as number,
+          })
+        );
 
         setResult({
           matches,

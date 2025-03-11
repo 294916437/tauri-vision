@@ -5,10 +5,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { BarChart, ImageIcon, LayersIcon, Settings } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-
 export default function Dashboard() {
   const features = [
     {
@@ -23,7 +22,7 @@ export default function Dashboard() {
       title: "历史记录",
       description: "查看和管理您的识别历史",
       icon: <BarChart className='h-6 w-6' />,
-      link: "#",
+      link: "/history",
       color: "bg-amber-100 dark:bg-amber-900/20",
       textColor: "text-amber-700 dark:text-amber-400",
     },
@@ -31,7 +30,7 @@ export default function Dashboard() {
       title: "模型管理",
       description: "管理和配置识别模型",
       icon: <LayersIcon className='h-6 w-6' />,
-      link: "#",
+      link: "/models",
       color: "bg-green-100 dark:bg-green-900/20",
       textColor: "text-green-700 dark:text-green-400",
     },
@@ -39,7 +38,7 @@ export default function Dashboard() {
       title: "系统设置",
       description: "调整系统参数和偏好设置",
       icon: <Settings className='h-6 w-6' />,
-      link: "#",
+      link: "/settings",
       color: "bg-purple-100 dark:bg-purple-900/20",
       textColor: "text-purple-700 dark:text-purple-400",
     },
@@ -63,9 +62,11 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent className='pt-4'>
-              <Button variant='outline' className='w-full' asChild>
-                <Link to={feature.link}>进入</Link>
-              </Button>
+              <Link
+                to={feature.link}
+                className={buttonVariants({ variant: "outline", className: "w-full" })}>
+                进入
+              </Link>
             </CardContent>
           </Card>
         ))}
@@ -76,6 +77,7 @@ export default function Dashboard() {
         <ol className='mt-4 list-decimal space-y-2 pl-6'>
           <li>在"图像识别"页面上传您需要分析的图像</li>
           <li>系统将自动处理您的图像并返回识别结果</li>
+          <li>在"模型管理"中选择不同模型来识别各种图像</li>
           <li>您可以查看识别的详细信息并保存结果</li>
           <li>在"历史记录"中查看和管理之前的识别任务</li>
         </ol>

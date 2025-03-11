@@ -1,4 +1,3 @@
-// src/hooks/useModels.ts
 import { useState, useEffect, useCallback } from "react";
 import { ModelInfo, ModelsState } from "@/lib/types";
 import { invoke } from "@tauri-apps/api/core";

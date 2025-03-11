@@ -5,6 +5,10 @@ import Dashboard from "@/pages/Dashboard";
 import Layout from "@/components/Layout";
 import ModelSettings from "@/pages/ModelSettings";
 function App() {
+  window.addEventListener("error", (event) => {
+    console.error("全局错误:", event.error);
+    event.preventDefault();
+  });
   return (
     <ThemeProvider defaultTheme='system' storageKey='vision-match-theme'>
       <BrowserRouter>
