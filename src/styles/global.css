@@ -2,65 +2,88 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* 基础主题变量 */
+    --background: 43 45% 91%; /* #F5ECD7 (bg-100) */
+    --foreground: 0 0% 21%; /* #353535 (text-100) */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* 主色调 */
+    --primary: 144 30% 66%; /* #8FBF9F (primary-100) */
+    --primary-foreground: 0 0% 100%; /* white */
+    --primary-muted: 144 26% 53%; /* #68a67d (primary-200) */
+    --primary-dark: 144 45% 26%; /* #24613b (primary-300) */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    /* 强调色 */
+    --accent: 35 99% 47%; /* #F18F01 (accent-100) */
+    --accent-foreground: 0 0% 100%; /* white */
+    --accent-dark: 27 100% 26%; /* #833500 (accent-200) */
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* 背景色阶 */
+    --bg-100: 43 45% 91%; /* #F5ECD7 */
+    --bg-200: 43 38% 86%; /* #ebe2cd */
+    --bg-300: 43 12% 71%; /* #c2baa6 */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* 文本色阶 */
+    --text-100: 0 0% 21%; /* #353535 */
+    --text-200: 0 0% 37%; /* #5f5f5f */
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* 组件变量 */
+    --card: var(--bg-100);
+    --card-foreground: var(--text-100);
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --popover: var(--bg-100);
+    --popover-foreground: var(--text-100);
+
+    --secondary: var(--bg-200);
+    --secondary-foreground: var(--text-100);
+
+    --muted: var(--bg-300);
+    --muted-foreground: var(--text-200);
+
+    --accent: 35 99% 47%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
+    --border: var(--bg-300);
+    --input: var(--bg-200);
+    --ring: var(--primary);
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* 深色主题 - 反转亮度 */
+    --background: 0 0% 21%; /* text-100 作为背景 */
+    --foreground: 43 45% 91%; /* bg-100 作为前景 */
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --primary: 144 45% 26%; /* primary-300 */
+    --primary-foreground: 0 0% 100%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --accent: 27 100% 26%; /* accent-200 */
+    --accent-foreground: 0 0% 100%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --bg-100: 0 0% 21%; /* text-100 */
+    --bg-200: 0 0% 16%; /* 更深的背景 */
+    --bg-300: 0 0% 13%; /* 最深的背景 */
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --text-100: 43 45% 91%; /* bg-100 */
+    --text-200: 43 38% 86%; /* bg-200 */
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    /* 组件深色变量 */
+    --card: var(--bg-200);
+    --card-foreground: var(--text-100);
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --popover: var(--bg-200);
+    --popover-foreground: var(--text-100);
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --secondary: var(--bg-300);
+    --secondary-foreground: var(--text-100);
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --muted: var(--bg-300);
+    --muted-foreground: var(--text-200);
+
+    --border: var(--bg-300);
+    --input: var(--bg-300);
   }
 }
 
