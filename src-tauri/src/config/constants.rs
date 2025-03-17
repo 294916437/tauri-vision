@@ -10,9 +10,6 @@ pub struct AppConfig {
 
     /// 日志级别
     pub log_level: String,
-
-    /// 是否为开发模式
-    pub dev_mode: bool,
 }
 
 // 全局单例配置
@@ -22,14 +19,10 @@ static APP_CONFIG: OnceLock<AppConfig> = OnceLock::new();
 /// 只会执行一次，后续调用会返回已初始化的配置
 pub fn init_config() -> &'static AppConfig {
     APP_CONFIG.get_or_init(|| {
-        // 使用简单的配置，仅适用于开发阶段
-        let dev_mode = true;
-
         AppConfig {
             upload_dir: String::from("uploads"),
             python_executable: String::from("D:/IDEA/anaconda3/envs/py310/python.exe"),
             log_level: String::from("debug"), // 开发阶段使用debug日志级别
-            dev_mode,
         }
     })
 }

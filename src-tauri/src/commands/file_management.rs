@@ -42,7 +42,7 @@ pub async fn save_uploaded_image(
     let upload_dir = get_upload_dir(&app_handle)?;
 
     // 保存文件
-    let file_path = upload_dir.join(&file_name);
+    let file_path: PathBuf = upload_dir.join(&file_name);
     fs::write(&file_path, file_data).map_err(|e| e.to_string())?;
 
     // 返回绝对路径

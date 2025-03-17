@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use std::io::{BufRead, BufReader, Write};
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 lazy_static! {
     pub static ref PYTHON_SERVICE: Mutex<Option<PythonService>> = Mutex::new(None);
