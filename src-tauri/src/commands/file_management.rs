@@ -1,4 +1,7 @@
 use crate::config::constants;
+use crate::db::images_collection::ImageRepository;
+use crate::utils::file; // 导入工具类
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use tauri::{command, AppHandle, Manager};
@@ -32,19 +35,73 @@ fn get_upload_dir(app_handle: &AppHandle) -> Result<PathBuf, String> {
     Ok(PathBuf::from(&upload_dir_rel))
 }
 
+/// 图片保存结果
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SaveImageResult {
+    pub file_path: String, // 文件存储路径
+    pub image_id: String,  // 数据库中的图片ID
+}
+
 #[command]
 pub async fn save_uploaded_image(
     app_handle: AppHandle,
     file_data: Vec<u8>,
     file_name: String,
-) -> Result<String, String> {
-    // 获取上传目录
+) -> Result<SaveImageResult, String> {
+    // 1. 计算文件哈希值 - 使用工具类中的SHA-256算法
+    let hash = file::calculate_file_hash(&file_data);
+
+    // 2. 检查数据库中是否已存在相同哈希的图片
+    let existing_image = ImageRepository::find_by_hash(&hash)
+        .await
+        .map_err(|e| format!("查询数据库失败: {}", e))?;
+
+    // 如果图片已存在，直接返回已存在的信息
+    if let Some(image) = existing_image {
+        let image_id = image.id.unwrap_or_default().to_string();
+        let file_path = image.storage_path.unwrap_or_else(|| "未知路径".to_string());
+
+        return Ok(SaveImageResult {
+            file_path,
+            image_id,
+        });
+    }
+
+    // 3. 获取文件扩展名并创建新文件名
+    let extension = file::get_file_extension(&file_name).unwrap_or("unknown");
+    let new_file_name = format!("{}.{}", &hash[..16], extension); // 使用哈希值前16位作为文件名
+
+    // 4. 获取上传目录
     let upload_dir = get_upload_dir(&app_handle)?;
 
-    // 保存文件
-    let file_path: PathBuf = upload_dir.join(&file_name);
+    // 5. 保存文件
+    let file_path: PathBuf = upload_dir.join(&new_file_name);
     fs::write(&file_path, file_data).map_err(|e| e.to_string())?;
 
-    // 返回绝对路径
-    Ok(file_path.to_str().unwrap_or(&file_name).to_string())
+    let absolute_path = file_path.to_str().unwrap_or(&new_file_name).to_string();
+
+    // 6. 提取文件大小
+    let file_size = fs::metadata(&file_path)
+        .map(|metadata| metadata.len() as i32)
+        .ok();
+
+    // 7. 保存到数据库
+    let image_id = ImageRepository::add_image(
+        &hash,
+        &new_file_name,
+        Some(&file_name),     // 原始文件名
+        Some(&absolute_path), // 存储路径
+        None,                 // 暂无图片URL
+        file_size,            // 文件大小
+        Some(extension),      // 文件格式
+        None,                 // 暂无标签
+    )
+    .await
+    .map_err(|e| format!("保存到数据库失败: {}", e))?;
+
+    // 8. 返回结果
+    Ok(SaveImageResult {
+        file_path: absolute_path,
+        image_id: image_id.to_string(),
+    })
 }

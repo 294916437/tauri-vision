@@ -236,7 +236,7 @@ impl ImageHistoryRepository {
         Ok(results)
     }
 
-    /// 更新历史记录的状态和结果 - 移除不在建表语句中的参数
+    /// 更新历史记录的状态和结果
     pub async fn update_status(
         id: &str,
         status: RecognitionStatus,

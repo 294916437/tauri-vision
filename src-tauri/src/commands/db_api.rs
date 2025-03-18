@@ -171,7 +171,6 @@ pub async fn update_history_status(
         _ => return Err("无效的状态".to_string()),
     };
 
-    // 忽略 processing_time 参数，因为集合中不再包含此字段
     ImageHistoryRepository::update_status(
         &id,
         status_enum,
