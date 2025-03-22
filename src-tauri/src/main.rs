@@ -34,8 +34,9 @@ async fn main() {
         .invoke_handler(tauri::generate_handler![
             process_image,
             save_uploaded_image,
+            save_image_history,
             get_available_models,
-            switch_model
+            switch_model,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

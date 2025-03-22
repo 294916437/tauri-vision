@@ -9,3 +9,4 @@ pub mod utils;
 pub use commands::file_management::save_uploaded_image;
 pub use commands::image_processing::process_image;
 pub use commands::model_management::{get_available_models, switch_model};
+pub use commands::save_image_history::save_image_history;

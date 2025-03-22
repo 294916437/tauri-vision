@@ -1,16 +1,9 @@
 use crate::db::histories_collection::{ImageHistoryRepository, RecognitionStatus};
 use crate::models::inference_result::ModelResult;
-use crate::utils::network::get_main_mac_address; // 导入网络工具类
+use crate::models::inference_result::SaveHistoryResult;
+use crate::utils::network::get_main_mac_address;
 use mongodb::bson::oid::ObjectId;
-use serde::{Deserialize, Serialize};
 use tauri::command;
-
-/// 历史记录保存结果
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SaveHistoryResult {
-    pub success: bool,
-    pub message: String,
-}
 
 /// 保存图像识别历史记录
 #[command]

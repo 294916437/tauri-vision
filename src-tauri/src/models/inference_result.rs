@@ -34,3 +34,13 @@ pub struct AvailableModels {
     pub models: Vec<ModelInfo>,
     pub active_model_id: String,
 }
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SaveHistoryResult {
+    pub success: bool,
+    pub message: String,
+}
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SaveImageResult {
+    pub file_path: String, // 文件存储路径
+    pub image_id: String,  // 数据库中的图片ID
+}

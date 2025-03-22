@@ -1,13 +1,13 @@
 use crate::config::constants;
 use crate::db::images_collection::ImageRepository;
+use crate::models::inference_result::SaveImageResult;
 use crate::utils::file; // 导入工具类
-use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use tauri::{command, AppHandle, Manager};
 
 /// 获取上传目录
-fn get_upload_dir(app_handle: &AppHandle) -> Result<PathBuf, String> {
+fn get_upload_dir(app_handle: &AppHandle) -> Result<(PathBuf, String), String> {
     let upload_dir_rel = &constants::get_config().upload_dir;
 
     // 获取可能的基础目录
@@ -27,19 +27,12 @@ fn get_upload_dir(app_handle: &AppHandle) -> Result<PathBuf, String> {
     for base_dir in &base_dirs {
         let dir = base_dir.join(&upload_dir_rel);
         if dir.exists() || fs::create_dir_all(&dir).is_ok() {
-            return Ok(dir);
+            return Ok((dir, upload_dir_rel.to_string()));
         }
     }
 
     // 如果都失败了，返回当前目录下的uploads
-    Ok(PathBuf::from(&upload_dir_rel))
-}
-
-/// 图片保存结果
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SaveImageResult {
-    pub file_path: String, // 文件存储路径
-    pub image_id: String,  // 数据库中的图片ID
+    Ok((PathBuf::from(&upload_dir_rel), upload_dir_rel.to_string()))
 }
 
 #[command]
@@ -71,26 +64,30 @@ pub async fn save_uploaded_image(
     let extension = file::get_file_extension(&file_name).unwrap_or("unknown");
     let new_file_name = format!("{}.{}", &hash[..16], extension); // 使用哈希值前16位作为文件名
 
-    // 4. 获取上传目录
-    let upload_dir = get_upload_dir(&app_handle)?;
+    // 4. 获取上传目录和相对路径
+    let (upload_dir, upload_dir_rel) = get_upload_dir(&app_handle)?;
 
     // 5. 保存文件
     let file_path: PathBuf = upload_dir.join(&new_file_name);
     fs::write(&file_path, file_data).map_err(|e| e.to_string())?;
 
-    let absolute_path = file_path.to_str().unwrap_or(&new_file_name).to_string();
+    // 创建相对路径用于存储到数据库
+    let relative_path = format!("{}/{}", upload_dir_rel, new_file_name);
+
+    // 确保路径分隔符统一 (适用于跨平台)
+    let relative_path = relative_path.replace("\\", "/");
 
     // 6. 提取文件大小
     let file_size = fs::metadata(&file_path)
         .map(|metadata| metadata.len() as i32)
         .ok();
 
-    // 7. 保存到数据库
+    // 7. 保存到数据库 - 使用相对路径
     let image_id = ImageRepository::add_image(
         &hash,
         &new_file_name,
         Some(&file_name),     // 原始文件名
-        Some(&absolute_path), // 存储路径
+        Some(&relative_path), // 存储相对路径而非绝对路径
         None,                 // 暂无图片URL
         file_size,            // 文件大小
         Some(extension),      // 文件格式
@@ -99,9 +96,9 @@ pub async fn save_uploaded_image(
     .await
     .map_err(|e| format!("保存到数据库失败: {}", e))?;
 
-    // 8. 返回结果
+    // 8. 返回结果 - 返回给前端的仍是绝对路径，方便前端直接访问
     Ok(SaveImageResult {
-        file_path: absolute_path,
+        file_path: relative_path,
         image_id: image_id.to_string(),
     })
 }
