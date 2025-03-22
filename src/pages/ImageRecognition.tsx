@@ -1,7 +1,14 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useImageRecognition } from "@/hooks/useImageRecognition";
-import { Loader2, Upload, AlertCircle, Image as ImageIcon } from "lucide-react";
+import {
+  Loader2,
+  Upload,
+  AlertCircle,
+  Image as ImageIcon,
+  CheckCircle,
+  Save,
+} from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -12,29 +19,44 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export function ImageRecognition() {
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const { isProcessing, result, processImage, error } = useImageRecognition();
+  const {
+    isUploading,
+    isProcessing,
+    uploadedImage,
+    result,
+    originalResult,
+    error,
+    uploadImage,
+    processImage,
+    saveHistory,
+    historyStatus,
+    resultSaved,
+  } = useImageRecognition();
 
   // 处理图像文件选择
-  const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleImageChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    // 创建预览URL
-    const fileUrl = URL.createObjectURL(file);
-    setImageFile(file);
-    setPreviewUrl(fileUrl);
-  }, []);
+      // 创建预览URL
+      const fileUrl = URL.createObjectURL(file);
+      setPreviewUrl(fileUrl);
 
-  // 处理图像识别提交
+      // 立即上传图片
+      await uploadImage(file);
+    },
+    [uploadImage]
+  );
+
+  // 处理图像识别提交 - 现在仅调用处理方法
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!imageFile) return;
-
-    await processImage(imageFile);
+    await processImage();
   };
 
   // 处理拖放功能
@@ -43,27 +65,45 @@ export function ImageRecognition() {
     e.stopPropagation();
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleDrop = useCallback(
+    async (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0];
-      if (file.type.startsWith("image/")) {
-        setImageFile(file);
-        setPreviewUrl(URL.createObjectURL(file));
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const file = e.dataTransfer.files[0];
+        if (file.type.startsWith("image/")) {
+          setPreviewUrl(URL.createObjectURL(file));
+
+          // 立即上传图片
+          await uploadImage(file);
+        }
       }
-    }
-  }, []);
+    },
+    [uploadImage]
+  );
 
-  // 释放预览URL资源
+  // 释放预览URL资源并重置状态
   const resetImage = useCallback(() => {
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
     }
-    setImageFile(null);
     setPreviewUrl(null);
   }, [previewUrl]);
+
+  // 当获得处理结果后，自动保存历史 - 只在条件满足且尚未保存时执行一次
+  useEffect(() => {
+    // 只有当有有效结果、没有错误、状态为pending且尚未保存时执行
+    if (
+      originalResult &&
+      !originalResult.error &&
+      !resultSaved &&
+      historyStatus === "pending"
+    ) {
+      console.log("自动保存历史记录...");
+      saveHistory();
+    }
+  }, [originalResult, saveHistory, resultSaved, historyStatus]);
 
   return (
     <div className='mx-auto max-w-4xl px-4 py-8'>
@@ -74,7 +114,7 @@ export function ImageRecognition() {
         <Card>
           <CardHeader>
             <CardTitle>上传图像</CardTitle>
-            <CardDescription>选择或拖放一个图像文件进行识别</CardDescription>
+            <CardDescription>选择或拖放图像文件</CardDescription>
           </CardHeader>
 
           <CardContent>
@@ -87,11 +127,27 @@ export function ImageRecognition() {
               {previewUrl ? (
                 <div className='relative h-full w-full overflow-hidden rounded'>
                   <img src={previewUrl} alt='预览' className='h-full w-full object-contain' />
+
+                  {/* 上传状态指示器 */}
+                  {isUploading && (
+                    <div className='absolute inset-0 flex items-center justify-center bg-black/40'>
+                      <Loader2 className='h-10 w-10 text-white animate-spin' />
+                    </div>
+                  )}
+
+                  {/* 上传成功指示器 */}
+                  {uploadedImage && (
+                    <Badge
+                      variant='outline'
+                      className='absolute top-2 right-2 bg-green-500/80 text-white'>
+                      <CheckCircle className='mr-1 h-3 w-3' /> 已上传
+                    </Badge>
+                  )}
                 </div>
               ) : (
                 <>
                   <Upload className='mb-2 h-10 w-10 text-muted-foreground' />
-                  <p className='text-sm text-muted-foreground'>拖放图像或点击下方按钮选择</p>
+                  <p className='text-sm text-muted-foreground'>拖放或点击下方按钮选择</p>
                 </>
               )}
             </div>
@@ -103,14 +159,25 @@ export function ImageRecognition() {
                 accept='image/*'
                 onChange={handleImageChange}
                 className='hidden'
+                disabled={isUploading}
               />
               <Button
                 type='button'
                 variant={previewUrl ? "outline" : "default"}
                 onClick={() => document.getElementById("imageInput")?.click()}
+                disabled={isUploading}
                 className='w-full'>
-                <ImageIcon className='mr-2 h-4 w-4' />
-                {previewUrl ? "更换图像" : "选择图像"}
+                {isUploading ? (
+                  <>
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                    上传中...
+                  </>
+                ) : (
+                  <>
+                    <ImageIcon className='mr-2 h-4 w-4' />
+                    {previewUrl ? "更换图像" : "选择图像"}
+                  </>
+                )}
               </Button>
 
               {previewUrl && (
@@ -118,6 +185,7 @@ export function ImageRecognition() {
                   type='button'
                   variant='destructive'
                   onClick={resetImage}
+                  disabled={isUploading}
                   className='w-full'>
                   移除图像
                 </Button>
@@ -129,7 +197,7 @@ export function ImageRecognition() {
             <Button
               variant='default'
               type='submit'
-              disabled={!imageFile || isProcessing}
+              disabled={!uploadedImage || isProcessing}
               onClick={handleSubmit}
               className='w-full'>
               {isProcessing ? (
@@ -138,7 +206,7 @@ export function ImageRecognition() {
                   处理中...
                 </>
               ) : (
-                "开始识别"
+                "识别图像"
               )}
             </Button>
           </CardFooter>
@@ -149,7 +217,7 @@ export function ImageRecognition() {
           <CardHeader>
             <CardTitle>识别结果</CardTitle>
             <CardDescription>
-              {result ? "模型识别结果及置信度" : "上传并处理图像后显示结果"}
+              {result ? "模型预测及置信度" : "上传并处理图像以查看结果"}
             </CardDescription>
           </CardHeader>
 
@@ -185,7 +253,7 @@ export function ImageRecognition() {
                   </div>
                 )}
 
-                <h4 className='text-sm font-medium text-muted-foreground'>所有匹配项</h4>
+                <h4 className='text-sm font-medium text-muted-foreground'>所有匹配</h4>
                 <div className='space-y-2'>
                   {result.matches.map((match, index) => (
                     <div
@@ -216,18 +284,10 @@ export function ImageRecognition() {
             ) : (
               <div className='flex h-full mt-20 flex-col items-center justify-center text-center text-muted-foreground'>
                 <ImageIcon className='mb-2 h-10 w-10' strokeOpacity={0.7} />
-                <p>请上传一张图像并点击"开始识别"</p>
+                <p>上传图像并点击"识别图像"</p>
               </div>
             )}
           </CardContent>
-
-          <CardFooter className='flex justify-between'>
-            {result?.matches && result.matches.length > 0 && (
-              <p className='text-sm text-muted-foreground'>
-                识别完成，共 {result.matches.length} 个匹配项
-              </p>
-            )}
-          </CardFooter>
         </Card>
       </div>
     </div>

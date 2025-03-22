@@ -1,9 +1,4 @@
-// 与后端匹配的类型
-export interface TopPrediction {
-  class: string;
-  probability: number;
-}
-// Rust后端返回的结果类型
+// Rust后端图片识别返回的结果类型
 export interface RustModelResult {
   prediction: string;
   confidence: number;
@@ -12,6 +7,14 @@ export interface RustModelResult {
   error?: string;
 }
 
+// 完善RustModelResult接口，确保与后端返回值匹配
+export interface RustModelResult {
+  prediction: string;
+  confidence: number;
+  class_probabilities: Record<string, number>;
+  model_type?: string;
+  error?: string;
+}
 // 前端使用的类型
 export interface ModelResult {
   matches?: {
