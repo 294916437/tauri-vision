@@ -45,6 +45,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["resources/scripts/*", "resources/models/*"]
+    "resources": ["resources/scripts/*", "resources/models/*", "uploads/*"]
   }
 }

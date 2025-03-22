@@ -37,6 +37,11 @@ async fn main() {
             save_image_history,
             get_available_models,
             switch_model,
+            delete_history,
+            get_history_by_model,
+            get_history_by_status,
+            get_history_count,
+            get_user_history,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
