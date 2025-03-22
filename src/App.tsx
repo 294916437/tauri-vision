@@ -4,6 +4,7 @@ import { ImageRecognition } from "@/pages/ImageRecognition";
 import Dashboard from "@/pages/Dashboard";
 import Layout from "@/components/Layout";
 import ModelSettings from "@/pages/ModelSettings";
+import ImageHistory from "@/pages/ImageHistory";
 import { TitleBar } from "./components/custom/title-bar";
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
                 <Route index element={<Dashboard />} />
                 <Route path='recognition' element={<ImageRecognition />} />
                 <Route path='models' element={<ModelSettings />} />
+                <Route path='history' element={<ImageHistory />} />
               </Route>
             </Routes>
           </BrowserRouter>
