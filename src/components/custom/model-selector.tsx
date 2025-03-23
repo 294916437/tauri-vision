@@ -9,7 +9,6 @@ interface ModelSelectorProps {
   loading?: boolean;
 }
 
-// 完全使用原生元素实现，避免shadcn/ui组件的问题
 export function ModelSelector({
   models,
   activeModelId,
@@ -52,7 +51,7 @@ export function ModelSelector({
   }, [open]);
 
   return (
-    <div className='relative' ref={containerRef}>
+    <div className='relative bg-amber-50' ref={containerRef}>
       {/* 自定义触发按钮 - 增强悬停效果 */}
       <button
         type='button'
@@ -119,7 +118,7 @@ export function ModelSelector({
           id='model-selector-dropdown'
           className='absolute z-50 w-[300px] mt-1 rounded-md border border-border bg-white dark:bg-gray-900 shadow-lg animate-in fade-in-80'
           style={{ top: "calc(100% + 5px)", left: 0, maxHeight: "400px", overflowY: "auto" }}>
-          <div className='flex flex-col'>
+          <div className='flex flex-col '>
             {/* 搜索输入框 - 明显的背景区分 */}
             <div className='sticky top-0 z-10 flex items-center border-b px-3 bg-gray-100 dark:bg-gray-800 shadow-sm'>
               <svg

@@ -2,50 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-
-// 历史记录类型定义 - 与后端匹配
-export interface RecognitionRecord {
-  id: string;
-  timestamp: Date;
-  imageId: string;
-  imageUrl: string | null;
-  model: string;
-  result: any | null; // 使用any类型匹配后端返回的复杂结构
-  confidence: number | null;
-  status: "pending" | "processing" | "success" | "failed" | "error";
-  // 图片相关信息 - 来自后端关联
-  originalFileName?: string;
-  fileSize?: number;
-  fileFormat?: string;
-}
-
-// 分页参数类型
-export interface PaginationParams {
-  page: number;
-  limit: number;
-}
-
-// 过滤参数类型
-export interface FilterParams {
-  searchTerm?: string;
-  status?: string;
-  model?: string;
-  sortBy?: "newest" | "oldest" | "confidence";
-  startDate?: Date;
-  endDate?: Date;
-}
-
-// 统计数据类型
-export interface HistoryStats {
-  total: number;
-  success: number;
-  failed: number;
-  processing: number;
-  pending: number;
-  error: number;
-  avgConfidence: number;
-  modelDistribution: Record<string, number>;
-}
+import { RecognitionRecord, PaginationParams, FilterParams, HistoryStats } from "@/lib/types";
 
 export function useHistory() {
   const [records, setRecords] = useState<RecognitionRecord[]>([]);
@@ -53,7 +10,7 @@ export function useHistory() {
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<PaginationParams>({
     page: 1,
-    limit: 10,
+    limit: 5,
   });
   const [filters, setFilters] = useState<FilterParams>({});
   const [total, setTotal] = useState(0);
@@ -69,7 +26,7 @@ export function useHistory() {
   });
   const pendingRequestRef = useRef(false);
 
-  // 获取历史记录总数 - 移除pagination.limit依赖，改为参数传递
+  // 获取历史记录总数
   const fetchTotalCount = useCallback(async (limit: number) => {
     try {
       const count = await invoke<number>("get_history_count");

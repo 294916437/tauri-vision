@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import type { RecognitionRecord } from "@/hooks/useImageHistory";
+import { RecognitionRecord } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -43,11 +43,15 @@ export function HistoryTable({
   onDeleteSelected,
 }: HistoryTableProps) {
   const [showSelectionBar, setShowSelectionBar] = useState(false);
-  const [viewingRecord, setViewingRecord] = useState<RecognitionRecord | null>(null);
   const [deletingRecords, setDeletingRecords] = useState<Set<string>>(new Set());
   // 图片加载状态处理
   const [imageCache] = useState<Map<string, string>>(new Map());
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+  //删除状态
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [confirmMessage, setConfirmMessage] =
+    useState("确定要删除这条记录吗？此操作不可撤销。");
   // 使用useEffect监听selectedRecords变化，添加过渡效果
   useEffect(() => {
     if (selectedRecords.length > 0 && !showSelectionBar) {
@@ -83,33 +87,39 @@ export function HistoryTable({
   }, [records, selectedRecords, setSelectedRecords]);
 
   // 删除单条记录
-  const handleDeleteSingle = useCallback(
-    async (id: string) => {
-      const confirmed = window.confirm("确定要删除这条记录吗？此操作不可撤销。");
-      if (confirmed) {
-        setDeletingRecords((prev) => new Set(prev).add(id));
-        try {
-          await onDeleteSelected([id]);
-        } finally {
-          setDeletingRecords((prev) => {
-            const newSet = new Set(prev);
-            newSet.delete(id);
-            return newSet;
-          });
-        }
+  const handleDeleteSingle = useCallback(async (id: string) => {
+    // 打开确认对话框而不是使用window.confirm
+    setDeleteConfirmId(id);
+    setConfirmMessage("确定要删除这条记录吗？此操作不可撤销。");
+    setConfirmDialogOpen(true);
+  }, []);
+  // 添加确认删除处理函数
+  const handleConfirmDelete = useCallback(async () => {
+    if (deleteConfirmId) {
+      setDeletingRecords((prev) => new Set(prev).add(deleteConfirmId));
+      try {
+        await onDeleteSelected([deleteConfirmId]);
+      } finally {
+        setDeletingRecords((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(deleteConfirmId);
+          return newSet;
+        });
       }
-    },
-    [onDeleteSelected]
-  );
-  // 打开记录详情
-  const openRecordDetails = useCallback((record: RecognitionRecord) => {
-    setViewingRecord(record);
-  }, []);
-
-  // 关闭记录详情
-  const closeRecordDetails = useCallback(() => {
-    setViewingRecord(null);
-  }, []);
+      // 关闭对话框并清除ID
+      setConfirmDialogOpen(false);
+      setDeleteConfirmId(null);
+    }
+  }, [deleteConfirmId, onDeleteSelected]);
+  const handleBulkDelete = useCallback(() => {
+    if (selectedRecords.length > 0) {
+      setConfirmMessage(
+        `确定要删除选中的 ${selectedRecords.length} 条记录吗？此操作不可撤销。`
+      );
+      setDeleteConfirmId("bulk"); // 特殊标记表示批量删除
+      setConfirmDialogOpen(true);
+    }
+  }, [selectedRecords]);
   //处理获取图片路径
   const getImageSource = useCallback(
     (imageUrl: string | null, recordId: string) => {
@@ -246,7 +256,7 @@ export function HistoryTable({
           <Button
             variant='ghost'
             size='sm'
-            onClick={() => onDeleteSelected(selectedRecords)}
+            onClick={handleBulkDelete}
             disabled={loading || selectedRecords.length === 0}
             className='h-8 px-2 text-sm'>
             {loading ? (
@@ -363,7 +373,7 @@ export function HistoryTable({
                         variant='ghost'
                         size='icon'
                         title='查看详情'
-                        onClick={() => openRecordDetails(record)}
+                        onClick={() => {}}
                         className='h-8 w-8'>
                         <Eye className='h-4 w-4' />
                       </Button>
@@ -397,122 +407,32 @@ export function HistoryTable({
           </TableBody>
         </Table>
       </div>
-
-      {/* 记录详情对话框 */}
-      <Dialog open={!!viewingRecord} onOpenChange={(open) => !open && closeRecordDetails()}>
-        <DialogContent className='max-w-4xl'>
+      {/* 自定义确认对话框 */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent className='sm:max-w-[425px]'>
           <DialogHeader>
-            <DialogTitle>历史记录详情</DialogTitle>
-            <DialogDescription>
-              {viewingRecord && format(viewingRecord.timestamp, "yyyy-MM-dd HH:mm:ss")}
-            </DialogDescription>
+            <DialogTitle>确认删除</DialogTitle>
+            <DialogDescription>{confirmMessage}</DialogDescription>
           </DialogHeader>
-
-          {viewingRecord && (
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              <div className='space-y-4'>
-                <div>
-                  <h3 className='text-sm font-medium mb-2'>图像</h3>
-                  <div className='rounded border p-1 bg-muted/10 relative'>
-                    <img
-                      src={getImageSource(viewingRecord.imageUrl, viewingRecord.id)}
-                      alt='识别图像'
-                      className='max-h-[300px] w-full object-contain rounded'
-                      loading='lazy'
-                      onError={(e) => {
-                        setImageErrors((prev) => new Set(prev).add(viewingRecord.id));
-                        (e.target as HTMLImageElement).src = placeholderSvgBase64;
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className='text-sm font-medium mb-2'>图像信息</h3>
-                  <div className='rounded border p-3 space-y-2 text-sm'>
-                    <div className='flex justify-between'>
-                      <span className='text-muted-foreground'>原始文件名:</span>
-                      <span>{viewingRecord.originalFileName || "未知"}</span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-muted-foreground'>文件大小:</span>
-                      <span>
-                        {viewingRecord.fileSize
-                          ? `${(viewingRecord.fileSize / 1024).toFixed(1)} KB`
-                          : "未知"}
-                      </span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-muted-foreground'>文件格式:</span>
-                      <span>{viewingRecord.fileFormat || "未知"}</span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-muted-foreground'>图像ID:</span>
-                      <span className='font-mono text-xs'>{viewingRecord.imageId}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className='space-y-4'>
-                <div>
-                  <h3 className='text-sm font-medium mb-2'>识别信息</h3>
-                  <div className='rounded border p-3 space-y-2 text-sm'>
-                    <div className='flex justify-between items-center'>
-                      <span className='text-muted-foreground'>状态:</span>
-                      {getStatusBadge(viewingRecord.status)}
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-muted-foreground'>使用模型:</span>
-                      <span>{viewingRecord.model}</span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-muted-foreground'>置信度:</span>
-                      <span>{formatConfidence(viewingRecord.confidence)}</span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-muted-foreground'>处理时间:</span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-muted-foreground'>记录ID:</span>
-                      <span className='font-mono text-xs'>{viewingRecord.id}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className='text-sm font-medium mb-2'>识别结果</h3>
-                  <div className='rounded border p-3'>
-                    {viewingRecord.result ? (
-                      <pre className='text-xs overflow-auto max-h-[200px] whitespace-pre-wrap'>
-                        {typeof viewingRecord.result === "object"
-                          ? JSON.stringify(viewingRecord.result, null, 2)
-                          : String(viewingRecord.result)}
-                      </pre>
-                    ) : (
-                      <p className='text-muted-foreground'>无识别结果</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant='outline' onClick={closeRecordDetails}>
-              关闭
+          <DialogFooter className='flex space-x-2 justify-end pt-4'>
+            <Button variant='outline' onClick={() => setConfirmDialogOpen(false)}>
+              取消
             </Button>
-            {viewingRecord && (
-              <Button
-                variant='destructive'
-                onClick={() => {
-                  closeRecordDetails();
-                  handleDeleteSingle(viewingRecord.id);
-                }}
-                disabled={loading}>
-                删除记录
-              </Button>
-            )}
+            <Button
+              variant='destructive'
+              onClick={() => {
+                if (deleteConfirmId === "bulk") {
+                  // 执行批量删除
+                  onDeleteSelected(selectedRecords);
+                } else {
+                  // 执行单条删除
+                  handleConfirmDelete();
+                }
+                setConfirmDialogOpen(false);
+              }}>
+              <Trash2 className='h-4 w-4 mr-2' />
+              确认删除
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

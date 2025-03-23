@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { FilterParams } from "@/hooks/useImageHistory";
+import { FilterParams } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -111,7 +111,7 @@ export function HistoryFilters({ onFilterChange }: HistoryFiltersProps) {
           <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
           <Input
             type='search'
-            placeholder='搜索任务ID或结果...'
+            placeholder='搜索图片名称或识别结果...'
             className='pl-8 w-full'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -135,7 +135,7 @@ export function HistoryFilters({ onFilterChange }: HistoryFiltersProps) {
             <SelectTrigger className='w-[120px]'>
               <SelectValue placeholder='全部状态' />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className='bg-amber-50'>
               <SelectItem value='all'>全部状态</SelectItem>
               <SelectItem value='success'>成功</SelectItem>
               <SelectItem value='failed'>失败</SelectItem>
@@ -150,7 +150,7 @@ export function HistoryFilters({ onFilterChange }: HistoryFiltersProps) {
           <SelectTrigger className='w-[140px]'>
             <SelectValue placeholder='全部模型' />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className='bg-amber-50'>
             <SelectItem value='all'>全部模型</SelectItem>
             {availableModels.loading ? (
               <SelectItem value='loading' disabled>
@@ -158,7 +158,7 @@ export function HistoryFilters({ onFilterChange }: HistoryFiltersProps) {
               </SelectItem>
             ) : availableModels.models.length > 0 ? (
               availableModels.models.map((model) => (
-                <SelectItem key={model.id} value={model.name}>
+                <SelectItem key={model.id} value={model.model_type}>
                   {model.name}
                 </SelectItem>
               ))
@@ -174,7 +174,7 @@ export function HistoryFilters({ onFilterChange }: HistoryFiltersProps) {
           <SelectTrigger className='w-[120px]'>
             <SelectValue placeholder='最新优先' />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className='bg-amber-50'>
             <SelectItem value='newest'>最新优先</SelectItem>
             <SelectItem value='oldest'>最早优先</SelectItem>
             <SelectItem value='confidence'>置信度优先</SelectItem>

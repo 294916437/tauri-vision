@@ -149,7 +149,7 @@ export function HistoryPagination({
         <SelectTrigger className='h-8 w-[70px]'>
           <SelectValue placeholder='5' />
         </SelectTrigger>
-        <SelectContent side='top'>
+        <SelectContent side='top' className='bg-amber-50'>
           <SelectItem value='5'>5</SelectItem>
           <SelectItem value='10'>10</SelectItem>
           <SelectItem value='30'>30</SelectItem>

@@ -65,3 +65,46 @@ export interface ModelsState {
 export interface ErrorResult {
   error: string;
 }
+// 历史记录类型定义 - 与后端匹配
+export interface RecognitionRecord {
+  id: string;
+  timestamp: Date;
+  imageId: string;
+  imageUrl: string | null;
+  model: string;
+  result: any | null; // 使用any类型匹配后端返回的复杂结构
+  confidence: number | null;
+  status: "pending" | "processing" | "success" | "failed" | "error";
+  // 图片相关信息 - 来自后端关联
+  originalFileName?: string;
+  fileSize?: number;
+  fileFormat?: string;
+}
+
+// 分页参数类型
+export interface PaginationParams {
+  page: number;
+  limit: number;
+}
+
+// 过滤参数类型
+export interface FilterParams {
+  searchTerm?: string;
+  status?: string;
+  model?: string;
+  sortBy?: "newest" | "oldest" | "confidence";
+  startDate?: Date;
+  endDate?: Date;
+}
+
+// 统计数据类型
+export interface HistoryStats {
+  total: number;
+  success: number;
+  failed: number;
+  processing: number;
+  pending: number;
+  error: number;
+  avgConfidence: number;
+  modelDistribution: Record<string, number>;
+}
