@@ -3,7 +3,6 @@ use crate::db::histories_collection::{ImageHistory, ImageHistoryRepository, Reco
 use crate::db::images_collection::{Image, ImageRepository};
 use crate::models::dto::{HistoryDto, HistoryWithImageDto, ImageDto};
 use crate::utils::network::get_main_mac_address;
-use crate::utils::path_utils::to_absolute_path;
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -43,15 +42,10 @@ fn convert_to_history_dto(history: &ImageHistory) -> HistoryDto {
 
 /// 转换函数 - 从Image到ImageDto
 fn convert_to_image_dto(image: &Image) -> ImageDto {
-    let image_url = image
-        .storage_path
-        .as_ref()
-        .map(|path| to_absolute_path(path));
-
     ImageDto {
         id: image.id.unwrap_or_default().to_string(),
         original_file_name: image.original_name.clone(),
-        image_url,
+        image_url: image.storage_path.clone(),
         file_size: image.file_size,
         format: image.format.clone(),
     }

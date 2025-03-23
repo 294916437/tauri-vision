@@ -1,29 +1,43 @@
-use std::sync::OnceLock;
-
-/// 应用程序配置常量
+use once_cell::sync::OnceCell;
+use serde::{Deserialize, Serialize};
+use std::env;
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AppConfig {
-    /// 上传目录相对路径
     pub upload_dir: String,
-
-    /// Python执行路径
     pub python_executable: String,
-
-    /// 日志级别
-    pub log_level: String,
+    // 数据库配置
+    pub mongodb_uri: String,
+    pub mongodb_database: String,
+}
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            upload_dir: String::from("uploads"),
+            python_executable: String::from("python"),
+            // 默认MongoDB连接信息
+            mongodb_uri: String::from("localhost"),
+            mongodb_database: String::from("mongodb"),
+        }
+    }
 }
 
 // 全局单例配置
-static APP_CONFIG: OnceLock<AppConfig> = OnceLock::new();
+static APP_CONFIG: OnceCell<AppConfig> = OnceCell::new();
 
 /// 初始化应用程序配置
-/// 只会执行一次，后续调用会返回已初始化的配置
 pub fn init_config() -> &'static AppConfig {
     APP_CONFIG.get_or_init(|| {
-        AppConfig {
-            upload_dir: String::from("uploads"),
-            python_executable: String::from("D:/IDEA/anaconda3/envs/py310/python.exe"),
-            log_level: String::from("debug"), // 开发阶段使用debug日志级别
+        let mut config = AppConfig::default();
+        if let Ok(value) = env::var("PYTHON_EXECUTABLE") {
+            config.python_executable = value;
         }
+        if let Ok(value) = env::var("MONGODB_URI") {
+            config.mongodb_uri = value;
+        }
+        if let Ok(value) = env::var("MONGODB_DATABASE") {
+            config.mongodb_database = value;
+        }
+        config
     })
 }
 

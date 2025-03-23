@@ -28,7 +28,7 @@ pub struct ImageDto {
     pub id: String,
     /// 原始文件名
     pub original_file_name: Option<String>,
-    /// 图片URL - 使用to_absolute_path转换
+    /// 图片URL，相对地址
     pub image_url: Option<String>,
     /// 文件大小
     pub file_size: Option<i32>,

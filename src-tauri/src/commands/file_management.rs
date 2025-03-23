@@ -3,9 +3,9 @@ use crate::db::images_collection::ImageRepository;
 use crate::models::inference_result::SaveImageResult;
 use crate::utils::file; // 导入工具类
 use std::fs;
+use std::path::Path;
 use std::path::PathBuf;
 use tauri::{command, AppHandle, Manager};
-
 /// 获取上传目录
 fn get_upload_dir(app_handle: &AppHandle) -> Result<(PathBuf, String), String> {
     let upload_dir_rel = &constants::get_config().upload_dir;
@@ -53,7 +53,13 @@ pub async fn save_uploaded_image(
     if let Some(image) = existing_image {
         let image_id = image.id.unwrap_or_default().to_string();
         let file_path = image.storage_path.unwrap_or_else(|| "未知路径".to_string());
-
+        if let Err(e) = ImageRepository::update_image(&image_id, None, None)
+            .await
+            .map_err(|e| format!("更新时间戳失败: {}", e))
+        {
+            // 仅记录错误，但不阻止整个操作
+            println!("警告: 更新图片时间戳失败: {}", e);
+        }
         return Ok(SaveImageResult {
             file_path,
             image_id,
@@ -63,7 +69,11 @@ pub async fn save_uploaded_image(
     // 3. 获取文件扩展名并创建新文件名
     let extension = file::get_file_extension(&file_name).unwrap_or("unknown");
     let new_file_name = format!("{}.{}", &hash[..16], extension); // 使用哈希值前16位作为文件名
-
+    let original_file_name_without_ext = Path::new(&file_name)
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .unwrap_or(&file_name)
+        .to_string();
     // 4. 获取上传目录和相对路径
     let (upload_dir, upload_dir_rel) = get_upload_dir(&app_handle)?;
 
@@ -86,12 +96,12 @@ pub async fn save_uploaded_image(
     let image_id = ImageRepository::add_image(
         &hash,
         &new_file_name,
-        Some(&file_name),     // 原始文件名
-        Some(&relative_path), // 存储相对路径而非绝对路径
-        None,                 // 暂无图片URL
-        file_size,            // 文件大小
-        Some(extension),      // 文件格式
-        None,                 // 暂无标签
+        Some(&original_file_name_without_ext), // 原始文件名
+        Some(&relative_path),                  // 存储相对路径而非绝对路径
+        None,                                  // 暂无图片URL
+        file_size,                             // 文件大小
+        Some(extension),                       // 文件格式
+        None,                                  // 暂无标签
     )
     .await
     .map_err(|e| format!("保存到数据库失败: {}", e))?;

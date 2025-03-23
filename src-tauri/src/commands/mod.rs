@@ -1,4 +1,4 @@
-pub mod db_api;
+pub mod cruds;
 pub mod file_management;
 pub mod image_processing;
 pub mod model_management;
