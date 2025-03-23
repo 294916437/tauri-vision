@@ -45,7 +45,9 @@ export function HistoryTable({
   const [showSelectionBar, setShowSelectionBar] = useState(false);
   const [viewingRecord, setViewingRecord] = useState<RecognitionRecord | null>(null);
   const [deletingRecords, setDeletingRecords] = useState<Set<string>>(new Set());
-  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  // 图片加载状态处理
+  const [imageCache] = useState<Map<string, string>>(new Map());
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   // 使用useEffect监听selectedRecords变化，添加过渡效果
   useEffect(() => {
     if (selectedRecords.length > 0 && !showSelectionBar) {
@@ -99,29 +101,6 @@ export function HistoryTable({
     },
     [onDeleteSelected]
   );
-  const handleImageError = useCallback((imageUrl: string | null) => {
-    if (imageUrl) {
-      setFailedImages((prev) => new Set(prev).add(imageUrl));
-    }
-  }, []);
-
-  const hasImageFailed = useCallback(
-    (imageUrl: string | null) => {
-      if (!imageUrl) return true;
-      return failedImages.has(imageUrl);
-    },
-    [failedImages]
-  );
-
-  const getImageSource = useCallback(
-    (imageUrl: string | null) => {
-      if (!imageUrl || hasImageFailed(imageUrl)) {
-        return placeholderSvgBase64;
-      }
-      return convertFileSrc(imageUrl);
-    },
-    [hasImageFailed]
-  );
   // 打开记录详情
   const openRecordDetails = useCallback((record: RecognitionRecord) => {
     setViewingRecord(record);
@@ -131,7 +110,51 @@ export function HistoryTable({
   const closeRecordDetails = useCallback(() => {
     setViewingRecord(null);
   }, []);
+  //处理获取图片路径
+  const getImageSource = useCallback(
+    (imageUrl: string | null, recordId: string) => {
+      // 1. 如果URL为空或已知错误，返回占位图
+      if (!imageUrl || imageErrors.has(recordId)) {
+        return placeholderSvgBase64;
+      }
 
+      // 2. 检查缓存
+      if (imageCache.has(imageUrl)) {
+        return imageCache.get(imageUrl)!;
+      }
+      try {
+        // 3. 转换本地路径
+        const convertedUrl = convertFileSrc(imageUrl);
+        imageCache.set(imageUrl, convertedUrl);
+        return convertedUrl;
+      } catch (err) {
+        console.error(`图片路径转换失败: ${imageUrl}`, err);
+        return placeholderSvgBase64;
+      }
+    },
+    [imageCache, imageErrors]
+  );
+  // 当记录列表变化时，重置可能已修复的图片错误
+  useEffect(() => {
+    if (records.length > 0 && imageErrors.size > 0) {
+      // 仅检查有错误标记的记录
+      const idsToCheck = Array.from(imageErrors);
+      const updatedRecords = records.filter((r) => idsToCheck.includes(r.id));
+
+      if (updatedRecords.length > 0) {
+        setImageErrors((prev) => {
+          const newErrors = new Set(prev);
+          updatedRecords.forEach((record) => {
+            // 如果记录的URL不为空，可能已修复，移除错误标记
+            if (record.imageUrl) {
+              newErrors.delete(record.id);
+            }
+          });
+          return newErrors;
+        });
+      }
+    }
+  }, [records, imageErrors]);
   // 获取状态徽章样式
   const getStatusBadge = useCallback((status: string) => {
     switch (status) {
@@ -254,13 +277,13 @@ export function HistoryTable({
                 />
               </TableHead>
               <TableHead className='w-[80px]'>图像</TableHead>
-              <TableHead className='w-[120px]'>任务ID</TableHead>
+              <TableHead className='w-[150px]'>名称</TableHead>
               <TableHead className='w-[180px]'>时间</TableHead>
-              <TableHead>使用模型</TableHead>
-              <TableHead>识别结果</TableHead>
+              <TableHead className='w-[200px]'>使用模型</TableHead>
+              <TableHead className='w-[120px]'>识别结果</TableHead>
               <TableHead className='w-[100px]'>置信度</TableHead>
               <TableHead className='w-[100px]'>状态</TableHead>
-              <TableHead className='w-[80px] text-center'>操作</TableHead>
+              <TableHead className='w-[100px] text-center'>操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -276,18 +299,22 @@ export function HistoryTable({
                     />
                   </TableCell>
                   <TableCell>
-                    <div className='h-10 w-10 rounded-md overflow-hidden border bg-muted/10'>
+                    <div className='h-10 w-10 rounded-md overflow-hidden border bg-muted/10 relative'>
                       <img
-                        src={getImageSource(record.imageUrl)}
+                        src={getImageSource(record.imageUrl, record.id)}
                         alt='识别图像'
                         className='h-full w-full object-cover'
-                        onError={() => handleImageError(record.imageUrl)}
+                        loading='lazy'
+                        onError={(e) => {
+                          // 直接在失败时更新状态并显示占位图
+                          setImageErrors((prev) => new Set(prev).add(record.id));
+                          (e.target as HTMLImageElement).src = placeholderSvgBase64;
+                          console.error(`图片加载失败: ${record.imageUrl}`);
+                        }}
                       />
                     </div>
                   </TableCell>
-                  <TableCell className='font-mono text-xs'>
-                    {record.id.substring(0, 10)}...
-                  </TableCell>
+                  <TableCell className='font-mono text-xs'>{record.originalFileName}</TableCell>
                   <TableCell>
                     <div className='flex flex-col'>
                       <span className='text-xs flex items-center'>
@@ -386,12 +413,16 @@ export function HistoryTable({
               <div className='space-y-4'>
                 <div>
                   <h3 className='text-sm font-medium mb-2'>图像</h3>
-                  <div className='rounded border p-1 bg-muted/10'>
+                  <div className='rounded border p-1 bg-muted/10 relative'>
                     <img
-                      src={getImageSource(viewingRecord.imageUrl)}
+                      src={getImageSource(viewingRecord.imageUrl, viewingRecord.id)}
                       alt='识别图像'
-                      className='h-full w-full object-cover'
-                      onError={() => handleImageError(viewingRecord.imageUrl)}
+                      className='max-h-[300px] w-full object-contain rounded'
+                      loading='lazy'
+                      onError={(e) => {
+                        setImageErrors((prev) => new Set(prev).add(viewingRecord.id));
+                        (e.target as HTMLImageElement).src = placeholderSvgBase64;
+                      }}
                     />
                   </div>
                 </div>
