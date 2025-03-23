@@ -36,11 +36,14 @@
   "plugins": {
     "shell": {
       "open": true
+    },
+    "fs": {
+      "scope": ["$APPDATA/*", "$RESOURCE/*"]
     }
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -48,6 +51,15 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "windows": {
+      "nsis": {
+        "installMode": "perMachine",
+        "headerImage": "installer/header.bmp",
+        "sidebarImage": "installer/sidebar.bmp",
+        "installerIcon": "icons/installer.ico",
+        "languages": ["English"]
+      }
+    },
     "resources": ["resources/scripts/*", "resources/models/*"]
   }
 }

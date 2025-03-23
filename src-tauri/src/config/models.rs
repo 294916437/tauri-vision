@@ -2,7 +2,6 @@ use crate::models::inference_result::ModelInfo;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::sync::Mutex;
-use uuid::Uuid;
 
 lazy_static! {
     pub static ref MODEL_REGISTRY: Mutex<ModelRegistry> = Mutex::new(ModelRegistry::new());
@@ -28,7 +27,7 @@ impl ModelRegistry {
 
     fn init_default_models(&mut self) {
         // 添加 CIFAR-10 模型
-        let cifar_id = Uuid::new_v4().to_string();
+        let cifar_id = String::from("CIFAR_MODEL_ID");
         let cifar_model = ModelInfo {
             id: cifar_id.clone(),
             name: "CIFAR-10 识别模型".to_string(),
@@ -42,7 +41,7 @@ impl ModelRegistry {
         self.models.insert(cifar_id.clone(), cifar_model);
 
         // 添加中医药模型
-        let medicine_id = Uuid::new_v4().to_string();
+        let medicine_id = String::from("MEDICINE_MODEL_ID");
         let medicine_model = ModelInfo {
             id: medicine_id.clone(),
             name: "中医药材识别模型".to_string(),
@@ -83,13 +82,6 @@ impl ModelRegistry {
         self.active_model_id = model_id.to_string();
 
         Ok(model.clone())
-    }
-
-    pub fn add_model(&mut self, mut model: ModelInfo) -> Result<String, String> {
-        let id = Uuid::new_v4().to_string();
-        model.id = id.clone();
-        self.models.insert(id.clone(), model);
-        Ok(id)
     }
 
     pub fn remove_model(&mut self, model_id: &str) -> Result<(), String> {

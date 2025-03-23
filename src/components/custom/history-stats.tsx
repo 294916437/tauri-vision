@@ -1,4 +1,4 @@
-import type { HistoryStats as HistoryStatsType } from "@/hooks/useImageHistory";
+import { HistoryStats as HistoryStatsType } from "@/lib/types";
 import { useMemo } from "react";
 import {
   Card,

@@ -7,7 +7,7 @@
 /gen/schemas
 # images resources
 /uploads
-
+/installer
 #tests dir
 /tests
 # env

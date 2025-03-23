@@ -1,14 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useImageRecognition } from "@/hooks/useImageRecognition";
-import {
-  Loader2,
-  Upload,
-  AlertCircle,
-  Image as ImageIcon,
-  CheckCircle,
-  Save,
-} from "lucide-react";
+import { Loader2, Upload, AlertCircle, Image as ImageIcon, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import {
