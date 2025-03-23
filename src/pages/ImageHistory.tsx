@@ -117,8 +117,20 @@ export default function ImageHistory() {
   // 处理刷新数据 - 使用useCallback优化性能
   const handleRefresh = useCallback(() => {
     setSelectedRecords([]); // 清除选择
-    refreshData();
-  }, [refreshData]);
+
+    // 在刷新前显式重置筛选条件
+    updateFilters({
+      searchTerm: "",
+      status: undefined,
+      model: undefined,
+      sortBy: "newest",
+    });
+
+    // 延迟一下刷新数据，确保筛选条件已被重置
+    setTimeout(() => {
+      refreshData();
+    }, 0);
+  }, [refreshData, updateFilters]);
 
   // 格式化显示范围文本 - 使用useMemo可以进一步优化，但这里简化处理
   const formatRangeText = useCallback(() => {
