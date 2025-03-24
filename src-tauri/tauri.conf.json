@@ -57,9 +57,10 @@
         "headerImage": "installer/header.bmp",
         "sidebarImage": "installer/sidebar.bmp",
         "installerIcon": "icons/installer.ico",
-        "languages": ["English"]
+        "languages": ["English"],
+        "installerHooks": "${projectDir}\\installer\\hooks.nsh"
       }
     },
-    "resources": ["resources/scripts/*", "resources/models/*"]
+    "resources": ["resources/scripts/*", "resources/models/*", "uploads/*"]
   }
 }

@@ -53,7 +53,20 @@ impl ModelRegistry {
             is_active: false,
         };
         self.models.insert(medicine_id.clone(), medicine_model);
-
+        // 添加蘑菇模型
+        let mushroom_id = String::from("MUSHROOM_MODEL_ID");
+        let mushroom_model = ModelInfo {
+            id: mushroom_id.clone(),
+            name: "蘑菇识别模型".to_string(),
+            description: "用于识别常见蘑菇品种的专用模型，可识别100种蘑菇，包括食用菌和有毒品种"
+                .to_string(),
+            path: "resources/models/mushroom_model.pth".to_string(),
+            model_type: "ResNet50".to_string(),
+            num_classes: 100,
+            script_path: "resources/scripts/mushroom_val.py".to_string(),
+            is_active: false,
+        };
+        self.models.insert(mushroom_id.clone(), mushroom_model);
         // 设置默认活跃模型
         self.active_model_id = medicine_id;
     }

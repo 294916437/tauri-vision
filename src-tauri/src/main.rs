@@ -1,27 +1,38 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use dotenv::dotenv;
 use once_cell::sync::Lazy;
-use std::env;
+use vision_match::config::constants;
 use vision_match::*;
-static DB_INIT: Lazy<()> = Lazy::new(|| {
-    dotenv().ok();
-    println!("已加载环境变量");
+
+// 环境变量和配置初始化
+static CONFIG_INIT: Lazy<&'static constants::AppConfig> = Lazy::new(|| {
+    // 开发环境下加载 .env 文件
+    #[cfg(debug_assertions)]
+    {
+        dotenv::dotenv().ok();
+        println!("开发模式：已加载环境变量");
+    }
+
+    // 初始化并返回应用配置
+    constants::init_config()
 });
+
 #[tokio::main]
 async fn main() {
-    //加载环境变量
-    Lazy::force(&DB_INIT);
-    //初始化常量模型
-    let app_config = init_config();
-    println!("已加载应用配置");
+    // 强制初始化配置
+    let config = *CONFIG_INIT;
 
-    let mongo_uri = app_config.mongodb_uri.clone();
+    println!("应用配置:");
+    println!("- Python: {}", config.python_executable);
+    println!("- MongoDB: {}", config.mongodb_uri);
+    println!("- 数据库: {}", config.mongodb_database);
 
-    let db_name = app_config.mongodb_database.clone();
+    // 初始化MongoDB连接
+    match init_mongodb(&config.mongodb_uri, &config.mongodb_database).await {
+        Ok(_) => println!("MongoDB连接成功"),
+        Err(e) => eprintln!("MongoDB连接失败: {}", e),
+    }
 
-    // 初始化MongoDB连接 - 等待连接完成
-    let _ = init_mongodb(&mongo_uri, &db_name).await;
-
+    // 启动Tauri应用
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             process_image,
