@@ -17,6 +17,8 @@ pub struct PythonService {
 
 impl PythonService {
     pub fn new(python_executable: String, script_path: String, model_path: String) -> Self {
+        let script_path = script_path.replace('/', std::path::MAIN_SEPARATOR.to_string().as_str());
+        let model_path = model_path.replace('/', std::path::MAIN_SEPARATOR.to_string().as_str());
         let mut command = Command::new(&python_executable);
         command
             .arg(&script_path)
@@ -74,6 +76,10 @@ impl PythonService {
 
     // 修复switch_model方法中的相同问题
     pub fn switch_model(&mut self, script_path: &str, model_path: &str) -> Result<(), String> {
+        // 标准化路径分隔符
+        let script_path = script_path.replace('/', std::path::MAIN_SEPARATOR.to_string().as_str());
+        let model_path = model_path.replace('/', std::path::MAIN_SEPARATOR.to_string().as_str());
+
         // 如果脚本和模型都没变，无需重启
         if self.current_script == script_path && self.current_model == model_path {
             return Ok(());
@@ -89,9 +95,9 @@ impl PythonService {
         // 启动新进程
         let mut command = Command::new(&self.python_executable);
         command
-            .arg(script_path)
+            .arg(&script_path)
             .arg("--server")
-            .arg(model_path)
+            .arg(&model_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());

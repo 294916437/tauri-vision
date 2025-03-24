@@ -2,15 +2,18 @@ use crate::config::constants;
 use crate::config::models::MODEL_REGISTRY;
 use crate::models::inference_result::ModelResult;
 use crate::services::python::{PythonService, PYTHON_SERVICE};
-use crate::utils::path_utils::to_absolute_path;
+use crate::utils::path_utils::{get_app_data_path, get_resource_path};
 use serde_json;
 use std::path::Path;
-use tauri::command;
+use tauri::{command, AppHandle};
 
 #[command]
-pub async fn process_image(image_path: String) -> Result<ModelResult, String> {
+pub async fn process_image(
+    app_handle: AppHandle,
+    image_path: String,
+) -> Result<ModelResult, String> {
     println!("处理图像: {}", image_path);
-    let image_abs_path = to_absolute_path(&image_path);
+    let image_abs_path = get_app_data_path(&app_handle, &image_path)?;
 
     // 确保图像文件存在
     if !Path::new(&image_abs_path).exists() {
@@ -22,9 +25,11 @@ pub async fn process_image(image_path: String) -> Result<ModelResult, String> {
     let active_model = registry.get_active_model().ok_or("没有活跃的模型")?;
 
     // 获取模型脚本和路径
-    let script_abs_path = to_absolute_path(&active_model.script_path);
-    let model_abs_path = to_absolute_path(&active_model.path);
+    let script_abs_path = get_resource_path(&app_handle, &active_model.script_path)?;
 
+    let model_abs_path = get_resource_path(&app_handle, &active_model.path)?;
+    println!("使用脚本路径: {}", script_abs_path);
+    println!("使用模型路径: {}", model_abs_path);
     // 获取或初始化Python服务
     let mut service_lock = PYTHON_SERVICE.lock().map_err(|_| "无法获取Python服务锁")?;
 

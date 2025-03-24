@@ -6,33 +6,41 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 use tauri::{command, AppHandle, Manager};
-/// 获取上传目录
+/// 获取上传目录 - 优先使用应用数据目录
 fn get_upload_dir(app_handle: &AppHandle) -> Result<(PathBuf, String), String> {
-    let upload_dir_rel = &constants::get_config().upload_dir;
+    let upload_dir_name = &constants::get_config().upload_dir;
 
-    // 获取可能的基础目录
-    let base_dirs = [
-        std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
-        app_handle
-            .path()
-            .app_data_dir()
-            .unwrap_or_else(|_| PathBuf::from(".")),
-        app_handle
-            .path()
-            .resource_dir()
-            .unwrap_or_else(|_| PathBuf::from(".")),
-    ];
+    // 优先级顺序：
+    // 1. 应用数据目录（最佳实践）
+    // 2. 当前工作目录（开发模式）
+    // 3. 资源目录（可能只读）
 
-    // 使用第一个存在的目录或创建一个
-    for base_dir in &base_dirs {
-        let dir = base_dir.join(&upload_dir_rel);
-        if dir.exists() || fs::create_dir_all(&dir).is_ok() {
-            return Ok((dir, upload_dir_rel.to_string()));
+    // 首先尝试使用应用数据目录
+    if let Ok(app_data_dir) = app_handle.path().app_data_dir() {
+        let upload_dir = app_data_dir.join(upload_dir_name);
+        if fs::create_dir_all(&upload_dir).is_ok() {
+            return Ok((upload_dir, upload_dir_name.to_string()));
         }
     }
 
-    // 如果都失败了，返回当前目录下的uploads
-    Ok((PathBuf::from(&upload_dir_rel), upload_dir_rel.to_string()))
+    // 其次尝试使用当前工作目录（适用于开发环境）
+    if let Ok(current_dir) = std::env::current_dir() {
+        let upload_dir = current_dir.join(upload_dir_name);
+        if fs::create_dir_all(&upload_dir).is_ok() {
+            return Ok((upload_dir, upload_dir_name.to_string()));
+        }
+    }
+
+    // 最后尝试使用可写的临时目录
+    let temp_dir = std::env::temp_dir()
+        .join("com.vision-match.app")
+        .join(upload_dir_name);
+    if fs::create_dir_all(&temp_dir).is_ok() {
+        return Ok((temp_dir, format!("temp/{}", upload_dir_name)));
+    }
+
+    // 如果所有尝试都失败，返回错误
+    Err("无法创建上传目录，请检查应用权限".to_string())
 }
 
 #[command]

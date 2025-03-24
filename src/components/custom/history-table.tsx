@@ -14,15 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Calendar, Clock, Eye, Loader2, Trash2, X, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-
+import { ask } from "@tauri-apps/plugin-dialog";
 interface HistoryTableProps {
   records: RecognitionRecord[];
   loading: boolean;
@@ -47,11 +39,6 @@ export function HistoryTable({
   // 图片加载状态处理
   const [imageCache] = useState<Map<string, string>>(new Map());
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
-  //删除状态
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [confirmMessage, setConfirmMessage] =
-    useState("确定要删除这条记录吗？此操作不可撤销。");
   // 使用useEffect监听selectedRecords变化，添加过渡效果
   useEffect(() => {
     if (selectedRecords.length > 0 && !showSelectionBar) {
@@ -87,39 +74,49 @@ export function HistoryTable({
   }, [records, selectedRecords, setSelectedRecords]);
 
   // 删除单条记录
-  const handleDeleteSingle = useCallback(async (id: string) => {
-    // 打开确认对话框而不是使用window.confirm
-    setDeleteConfirmId(id);
-    setConfirmMessage("确定要删除这条记录吗？此操作不可撤销。");
-    setConfirmDialogOpen(true);
-  }, []);
-  // 添加确认删除处理函数
-  const handleConfirmDelete = useCallback(async () => {
-    if (deleteConfirmId) {
-      setDeletingRecords((prev) => new Set(prev).add(deleteConfirmId));
-      try {
-        await onDeleteSelected([deleteConfirmId]);
-      } finally {
-        setDeletingRecords((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(deleteConfirmId);
-          return newSet;
-        });
+  const handleDeleteSingle = useCallback(
+    async (id: string) => {
+      const confirmed = await ask("确定要删除这条记录吗？此操作不可撤销。", {
+        title: "确认删除",
+        kind: "warning",
+        okLabel: "删除",
+        cancelLabel: "取消",
+      });
+
+      if (confirmed) {
+        setDeletingRecords((prev) => new Set(prev).add(id));
+        try {
+          await onDeleteSelected([id]);
+        } finally {
+          setDeletingRecords((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(id);
+            return newSet;
+          });
+        }
       }
-      // 关闭对话框并清除ID
-      setConfirmDialogOpen(false);
-      setDeleteConfirmId(null);
-    }
-  }, [deleteConfirmId, onDeleteSelected]);
-  const handleBulkDelete = useCallback(() => {
+    },
+    [onDeleteSelected]
+  );
+
+  // 批量删除记录
+  const handleBulkDelete = useCallback(async () => {
     if (selectedRecords.length > 0) {
-      setConfirmMessage(
-        `确定要删除选中的 ${selectedRecords.length} 条记录吗？此操作不可撤销。`
+      const confirmed = await ask(
+        `确定要删除选中的 ${selectedRecords.length} 条记录吗？此操作不可撤销。`,
+        {
+          title: "确认批量删除",
+          kind: "warning",
+          okLabel: "删除",
+          cancelLabel: "取消",
+        }
       );
-      setDeleteConfirmId("bulk"); // 特殊标记表示批量删除
-      setConfirmDialogOpen(true);
+
+      if (confirmed) {
+        await onDeleteSelected(selectedRecords);
+      }
     }
-  }, [selectedRecords]);
+  }, [selectedRecords, onDeleteSelected]);
   //处理获取图片路径
   const getImageSource = useCallback(
     (imageUrl: string | null, recordId: string) => {
@@ -407,35 +404,6 @@ export function HistoryTable({
           </TableBody>
         </Table>
       </div>
-      {/* 自定义确认对话框 */}
-      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <DialogContent className='sm:max-w-[425px]'>
-          <DialogHeader>
-            <DialogTitle>确认删除</DialogTitle>
-            <DialogDescription>{confirmMessage}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter className='flex space-x-2 justify-end pt-4'>
-            <Button variant='outline' onClick={() => setConfirmDialogOpen(false)}>
-              取消
-            </Button>
-            <Button
-              variant='destructive'
-              onClick={() => {
-                if (deleteConfirmId === "bulk") {
-                  // 执行批量删除
-                  onDeleteSelected(selectedRecords);
-                } else {
-                  // 执行单条删除
-                  handleConfirmDelete();
-                }
-                setConfirmDialogOpen(false);
-              }}>
-              <Trash2 className='h-4 w-4 mr-2' />
-              确认删除
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

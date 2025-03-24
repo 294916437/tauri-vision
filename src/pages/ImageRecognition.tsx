@@ -46,35 +46,11 @@ export function ImageRecognition() {
     [uploadImage]
   );
 
-  // 处理图像识别提交 - 现在仅调用处理方法
+  // 处理图像识别提交
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await processImage();
   };
-
-  // 处理拖放功能
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
-
-  const handleDrop = useCallback(
-    async (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        const file = e.dataTransfer.files[0];
-        if (file.type.startsWith("image/")) {
-          setPreviewUrl(URL.createObjectURL(file));
-
-          // 立即上传图片
-          await uploadImage(file);
-        }
-      }
-    },
-    [uploadImage]
-  );
 
   // 释放预览URL资源并重置状态
   const resetImage = useCallback(() => {
@@ -84,7 +60,7 @@ export function ImageRecognition() {
     setPreviewUrl(null);
   }, [previewUrl]);
 
-  // 当获得处理结果后，自动保存历史 - 只在条件满足且尚未保存时执行一次
+  // 当获得处理结果后，自动保存历史
   useEffect(() => {
     // 只有当有有效结果、没有错误、状态为pending且尚未保存时执行
     if (
@@ -107,16 +83,14 @@ export function ImageRecognition() {
         <Card>
           <CardHeader>
             <CardTitle>上传图像</CardTitle>
-            <CardDescription>选择或拖放图像文件</CardDescription>
+            <CardDescription>选择图像文件</CardDescription>
           </CardHeader>
 
           <CardContent>
             <div
               className={`mb-4 flex h-48 flex-col items-center justify-center rounded-lg border-2 border-dashed 
                 ${previewUrl ? "border-primary/40 bg-primary/5" : "border-muted"} 
-                transition-colors duration-200 hover:border-primary/70 hover:bg-primary/10`}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}>
+                transition-colors duration-200`}>
               {previewUrl ? (
                 <div className='relative h-full w-full overflow-hidden rounded'>
                   <img src={previewUrl} alt='预览' className='h-full w-full object-contain' />
@@ -140,7 +114,7 @@ export function ImageRecognition() {
               ) : (
                 <>
                   <Upload className='mb-2 h-10 w-10 text-muted-foreground' />
-                  <p className='text-sm text-muted-foreground'>拖放或点击下方按钮选择</p>
+                  <p className='text-sm text-muted-foreground'>点击下方按钮选择图片</p>
                 </>
               )}
             </div>
@@ -159,7 +133,7 @@ export function ImageRecognition() {
                 variant={previewUrl ? "outline" : "default"}
                 onClick={() => document.getElementById("imageInput")?.click()}
                 disabled={isUploading}
-                className='w-full'>
+                className='w-full bg-accent'>
                 {isUploading ? (
                   <>
                     <Loader2 className='mr-2 h-4 w-4 animate-spin' />
@@ -172,7 +146,6 @@ export function ImageRecognition() {
                   </>
                 )}
               </Button>
-
               {previewUrl && (
                 <Button
                   type='button'

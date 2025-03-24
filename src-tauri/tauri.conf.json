@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Vision Match",
+        "title": "Whale Vision",
         "width": 1200,
         "height": 800,
         "minWidth": 900,
@@ -54,13 +54,11 @@
     "windows": {
       "nsis": {
         "installMode": "perMachine",
-        "headerImage": "installer/header.bmp",
-        "sidebarImage": "installer/sidebar.bmp",
         "installerIcon": "icons/installer.ico",
         "languages": ["English"],
-        "installerHooks": "${projectDir}\\installer\\hooks.nsh"
+        "installerHooks": "./windows/hooks.nsi"
       }
     },
-    "resources": ["resources/scripts/*", "resources/models/*", "uploads/*"]
+    "resources": ["resources/*"]
   }
 }

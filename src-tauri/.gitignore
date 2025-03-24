@@ -8,6 +8,7 @@
 # images resources
 /uploads
 /installer
+/windows
 #tests dir
 /tests
 # env
