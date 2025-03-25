@@ -76,9 +76,9 @@ export interface RecognitionRecord {
   confidence: number | null;
   status: "pending" | "processing" | "success" | "failed" | "error";
   // 图片相关信息 - 来自后端关联
-  originalFileName?: string;
-  fileSize?: number;
-  fileFormat?: string;
+  originalFileName: string;
+  fileSize: number;
+  fileFormat: string;
 }
 
 // 分页参数类型

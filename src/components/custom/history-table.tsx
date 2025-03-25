@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { convertFileSrc } from "@tauri-apps/api/core";
+import { readFile, BaseDirectory } from "@tauri-apps/plugin-fs";
 import { RecognitionRecord } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,7 +51,18 @@ export function HistoryTable({
       return () => clearTimeout(timer);
     }
   }, [selectedRecords, showSelectionBar]);
-
+  useEffect(() => {
+    const loadAllImages = async () => {
+      for (const record of records) {
+        try {
+          await getImageSource(record.imageUrl, record.fileFormat, record.id);
+        } catch (error) {
+          console.error(`无法加载图片: ${record.imageUrl}`, error);
+        }
+      }
+    };
+    loadAllImages();
+  }, [records]);
   // 处理选择记录
   const toggleRecordSelection = useCallback(
     (id: string) => {
@@ -76,7 +87,7 @@ export function HistoryTable({
   // 删除单条记录
   const handleDeleteSingle = useCallback(
     async (id: string) => {
-      const confirmed = await ask("确定要删除这条记录吗？此操作不可撤销。", {
+      const confirmed = await ask("确定要删除这条记录吗？", {
         title: "确认删除",
         kind: "warning",
         okLabel: "删除",
@@ -102,15 +113,12 @@ export function HistoryTable({
   // 批量删除记录
   const handleBulkDelete = useCallback(async () => {
     if (selectedRecords.length > 0) {
-      const confirmed = await ask(
-        `确定要删除选中的 ${selectedRecords.length} 条记录吗？此操作不可撤销。`,
-        {
-          title: "确认批量删除",
-          kind: "warning",
-          okLabel: "删除",
-          cancelLabel: "取消",
-        }
-      );
+      const confirmed = await ask(`确定要删除选中的 ${selectedRecords.length} 条记录吗？`, {
+        title: "确认批量删除",
+        kind: "warning",
+        okLabel: "删除",
+        cancelLabel: "取消",
+      });
 
       if (confirmed) {
         await onDeleteSelected(selectedRecords);
@@ -119,27 +127,33 @@ export function HistoryTable({
   }, [selectedRecords, onDeleteSelected]);
   //处理获取图片路径
   const getImageSource = useCallback(
-    (imageUrl: string | null, recordId: string) => {
-      // 1. 如果URL为空或已知错误，返回占位图
+    async (imageUrl: string | null, format: string, recordId: string) => {
+      // 如果URL为空或已知错误，返回占位图
       if (!imageUrl || imageErrors.has(recordId)) {
         return placeholderSvgBase64;
       }
-
-      // 2. 检查缓存
+      // 检查缓存
       if (imageCache.has(imageUrl)) {
         return imageCache.get(imageUrl)!;
       }
       try {
-        // 3. 转换本地路径
-        const convertedUrl = convertFileSrc(imageUrl);
-        imageCache.set(imageUrl, convertedUrl);
-        return convertedUrl;
+        const fileBytes = await readFile(imageUrl, { baseDir: BaseDirectory.AppData });
+
+        // 创建 Blob 对象
+        const blob = new Blob([fileBytes], { type: format });
+
+        // 使用 URL.createObjectURL 创建临时 URL
+        const objectUrl = URL.createObjectURL(blob);
+
+        // 缓存并返回结果
+        imageCache.set(imageUrl, objectUrl);
+        return objectUrl;
       } catch (err) {
-        console.error(`图片路径转换失败: ${imageUrl}`, err);
+        console.error(`图片路径转换失败: ${imageUrl}.${format}`, err);
         return placeholderSvgBase64;
       }
     },
-    [imageCache, imageErrors]
+    [imageCache]
   );
   // 当记录列表变化时，重置可能已修复的图片错误
   useEffect(() => {
@@ -308,7 +322,11 @@ export function HistoryTable({
                   <TableCell>
                     <div className='h-10 w-10 rounded-md overflow-hidden border bg-muted/10 relative'>
                       <img
-                        src={getImageSource(record.imageUrl, record.id)}
+                        src={
+                          imageCache.has(record.imageUrl || "")
+                            ? imageCache.get(record.imageUrl || "")!
+                            : placeholderSvgBase64
+                        }
                         alt='识别图像'
                         className='h-full w-full object-cover'
                         loading='lazy'
