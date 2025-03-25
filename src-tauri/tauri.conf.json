@@ -29,18 +29,11 @@
       "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost data:",
       "assetProtocol": {
         "enable": true,
-        "scope": ["**"]
+        "scope": ["$APPDATA/uploads/*", "$RESOURCE/**"]
       }
     }
   },
-  "plugins": {
-    "shell": {
-      "open": true
-    },
-    "fs": {
-      "scope": ["$APPDATA/*", "$RESOURCE/*"]
-    }
-  },
+  "plugins": {},
   "bundle": {
     "active": true,
     "targets": ["nsis"],
@@ -56,9 +49,9 @@
         "installMode": "perMachine",
         "installerIcon": "icons/installer.ico",
         "languages": ["English"],
-        "installerHooks": "./windows/hooks.nsi"
+        "installerHooks": "windows/hooks.nsi"
       }
     },
-    "resources": ["resources/*"]
+    "resources": ["resources/scripts/*", "resources/models/*"]
   }
 }

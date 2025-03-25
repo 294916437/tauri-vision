@@ -39,11 +39,11 @@ importers:
         specifier: ^2
         version: 2.3.0
       '@tauri-apps/plugin-dialog':
-        specifier: ^2
+        specifier: ^2.2.0
         version: 2.2.0
-      '@tauri-apps/plugin-opener':
-        specifier: ^2
-        version: 2.2.6
+      '@tauri-apps/plugin-fs':
+        specifier: ~2
+        version: 2.2.0
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -1159,8 +1159,8 @@ packages:
   '@tauri-apps/plugin-dialog@2.2.0':
     resolution: {integrity: sha512-6bLkYK68zyK31418AK5fNccCdVuRnNpbxquCl8IqgFByOgWFivbiIlvb79wpSXi0O+8k8RCSsIpOquebusRVSg==}
 
-  '@tauri-apps/plugin-opener@2.2.6':
-    resolution: {integrity: sha512-bSdkuP71ZQRepPOn8BOEdBKYJQvl6+jb160QtJX/i2H9BF6ZySY/kYljh76N2Ne5fJMQRge7rlKoStYQY5Jq1w==}
+  '@tauri-apps/plugin-fs@2.2.0':
+    resolution: {integrity: sha512-+08mApuONKI8/sCNEZ6AR8vf5vI9DXD4YfrQ9NQmhRxYKMLVhRW164vdW5BSLmMpuevftpQ2FVoL9EFkfG9Z+g==}
 
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -2513,7 +2513,7 @@ snapshots:
     dependencies:
       '@tauri-apps/api': 2.3.0
 
-  '@tauri-apps/plugin-opener@2.2.6':
+  '@tauri-apps/plugin-fs@2.2.0':
     dependencies:
       '@tauri-apps/api': 2.3.0
 

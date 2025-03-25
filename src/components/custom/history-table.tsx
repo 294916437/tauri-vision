@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Calendar, Clock, Eye, Loader2, Trash2, X, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
-import { ask } from "@tauri-apps/plugin-dialog";
+
 interface HistoryTableProps {
   records: RecognitionRecord[];
   loading: boolean;
@@ -87,24 +87,18 @@ export function HistoryTable({
   // 删除单条记录
   const handleDeleteSingle = useCallback(
     async (id: string) => {
-      const confirmed = await ask("确定要删除这条记录吗？", {
-        title: "确认删除",
-        kind: "warning",
-        okLabel: "删除",
-        cancelLabel: "取消",
-      });
-
-      if (confirmed) {
-        setDeletingRecords((prev) => new Set(prev).add(id));
-        try {
-          await onDeleteSelected([id]);
-        } finally {
-          setDeletingRecords((prev) => {
-            const newSet = new Set(prev);
-            newSet.delete(id);
-            return newSet;
-          });
-        }
+      // 不再显示确认对话框，直接标记为删除中
+      setDeletingRecords((prev) => new Set(prev).add(id));
+      try {
+        // 调用父组件的删除方法
+        await onDeleteSelected([id]);
+      } finally {
+        // 无论成功与否，移除删除状态
+        setDeletingRecords((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(id);
+          return newSet;
+        });
       }
     },
     [onDeleteSelected]
@@ -113,16 +107,8 @@ export function HistoryTable({
   // 批量删除记录
   const handleBulkDelete = useCallback(async () => {
     if (selectedRecords.length > 0) {
-      const confirmed = await ask(`确定要删除选中的 ${selectedRecords.length} 条记录吗？`, {
-        title: "确认批量删除",
-        kind: "warning",
-        okLabel: "删除",
-        cancelLabel: "取消",
-      });
-
-      if (confirmed) {
-        await onDeleteSelected(selectedRecords);
-      }
+      // 直接调用父组件的删除方法，不显示确认对话框
+      await onDeleteSelected(selectedRecords);
     }
   }, [selectedRecords, onDeleteSelected]);
   //处理获取图片路径

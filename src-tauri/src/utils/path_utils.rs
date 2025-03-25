@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tauri::{AppHandle, Manager};
 
 /// 将相对路径转换为绝对路径 - 不依赖AppHandle的简单版本
@@ -12,7 +12,19 @@ pub fn to_absolute_path(path: &str) -> String {
         Err(_) => path.to_string(),
     }
 }
+pub fn normalize_path_for_storage(path: &str) -> String {
+    // 总是使用正斜杠，无论平台
+    path.replace('\\', "/")
+}
 
+pub fn normalize_path_for_filesystem(path: &str) -> String {
+    // 根据平台转换为适合文件系统的格式
+    if cfg!(windows) {
+        path.replace('/', "\\")
+    } else {
+        path.replace('\\', "/")
+    }
+}
 /// 将相对路径解析到应用数据目录
 pub fn resolve_app_path(app_handle: &AppHandle, relative_path: &str) -> Result<String, String> {
     // 首先尝试应用数据目录
@@ -44,6 +56,12 @@ pub fn resolve_app_path(app_handle: &AppHandle, relative_path: &str) -> Result<S
 
 /// 获取应用数据目录中的路径 - 即使文件不存在也返回完整路径
 pub fn get_app_data_path(app_handle: &AppHandle, relative_path: &str) -> Result<String, String> {
+    // 标准化路径分隔符 - 确保使用平台相关的分隔符
+    let normalized_path = if cfg!(windows) {
+        relative_path.replace("/", "\\")
+    } else {
+        relative_path.replace("\\", "/")
+    };
     // 获取应用数据目录
     let app_data_dir = app_handle
         .path()
@@ -51,7 +69,7 @@ pub fn get_app_data_path(app_handle: &AppHandle, relative_path: &str) -> Result<
         .map_err(|e| format!("无法获取应用数据目录: {}", e))?;
 
     // 返回完整路径
-    let full_path = app_data_dir.join(relative_path);
+    let full_path = app_data_dir.join(normalized_path);
     Ok(full_path.to_string_lossy().into_owned())
 }
 /// 获取资源目录中文件的绝对路径

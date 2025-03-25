@@ -20,6 +20,8 @@ async fn main() {
 
     // 启动Tauri应用
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // 获取应用句柄，并在这里初始化配置
             let app_handle = app.handle();

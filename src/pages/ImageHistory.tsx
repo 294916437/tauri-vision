@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { BarChart, Download, ImageIcon, RefreshCw, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-
+import { ask } from "@tauri-apps/plugin-dialog";
 export default function ImageHistory() {
   const [selectedTab, setSelectedTab] = useState("list");
   const {
@@ -41,17 +41,18 @@ export default function ImageHistory() {
       const recordsToDelete = ids || selectedRecords;
 
       if (recordsToDelete.length === 0) return;
-
-      const confirmed = window.confirm(
-        `确定要删除选定的 ${recordsToDelete.length} 条记录吗？此操作不可撤销。`
-      );
+      const confirmed = await ask(`确定要删除选定的 ${recordsToDelete.length} 条记录吗？`, {
+        title: "确认删除",
+        kind: "warning",
+        okLabel: "删除",
+        cancelLabel: "取消",
+      });
 
       if (confirmed) {
         setDeleteLoading(true);
         try {
           const success = await deleteRecords(recordsToDelete);
           if (success) {
-            // 如果是主动传入的IDs，不清空选择记录
             if (!ids) {
               setSelectedRecords([]);
             }

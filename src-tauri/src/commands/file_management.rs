@@ -74,27 +74,20 @@ pub async fn save_uploaded_image(
         });
     }
 
-    // 3. 获取文件扩展名并创建新文件名
-    let extension = file::get_file_extension(&file_name).unwrap_or("unknown");
-    let new_file_name = format!("{}.{}", &hash[..16], extension); // 使用哈希值前16位作为文件名
-    let original_file_name_without_ext = Path::new(&file_name)
-        .file_stem()
-        .and_then(|stem| stem.to_str())
-        .unwrap_or(&file_name)
-        .to_string();
+    // 3. 获取文件扩展名和不带扩展的原名
+    let (name, ext) = file::split_filename(&file_name);
+    // 使用哈希值前16位作为文件名
+    let new_file_name = format!("{}.{}", &hash[..16], ext);
     // 4. 获取上传目录和相对路径
     let (upload_dir, upload_dir_rel) = get_upload_dir(&app_handle)?;
 
     // 5. 保存文件
     let file_path: PathBuf = upload_dir.join(&new_file_name);
+    print!("保存文件到: {:?}", &file_path);
     fs::write(&file_path, file_data).map_err(|e| e.to_string())?;
 
     // 创建相对路径用于存储到数据库
     let relative_path = format!("{}/{}", upload_dir_rel, new_file_name);
-
-    // 确保路径分隔符统一 (适用于跨平台)
-    let relative_path = relative_path.replace("\\", "/");
-
     // 6. 提取文件大小
     let file_size = fs::metadata(&file_path)
         .map(|metadata| metadata.len() as i32)
@@ -104,12 +97,12 @@ pub async fn save_uploaded_image(
     let image_id = ImageRepository::add_image(
         &hash,
         &new_file_name,
-        Some(&original_file_name_without_ext), // 原始文件名
-        Some(&relative_path),                  // 存储相对路径而非绝对路径
-        None,                                  // 暂无图片URL
-        file_size,                             // 文件大小
-        Some(extension),                       // 文件格式
-        None,                                  // 暂无标签
+        Some(&name),          // 原始文件名
+        Some(&relative_path), // 存储相对路径
+        None,                 // 暂无图片URL
+        file_size,            // 文件大小
+        Some(&ext),           // 文件格式
+        None,                 // 暂无标签
     )
     .await
     .map_err(|e| format!("保存到数据库失败: {}", e))?;
