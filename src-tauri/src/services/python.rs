@@ -1,9 +1,9 @@
 use lazy_static::lazy_static;
 use std::io::{BufRead, BufReader, Write};
+use std::os::windows::process::CommandExt;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use std::time::Duration;
-
 lazy_static! {
     pub static ref PYTHON_SERVICE: Mutex<Option<PythonService>> = Mutex::new(None);
 }
@@ -26,7 +26,9 @@ impl PythonService {
             .arg(&model_path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
+            .stderr(Stdio::piped())
+            // 在 Windows 上隐藏控制台窗口
+            .creation_flags(0x08000000);
 
         println!("启动Python进程: {:?}", command);
 

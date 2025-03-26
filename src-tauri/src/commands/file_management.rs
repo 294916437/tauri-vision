@@ -1,9 +1,8 @@
 use crate::config::constants;
 use crate::db::images_collection::ImageRepository;
 use crate::models::inference_result::SaveImageResult;
-use crate::utils::file; // 导入工具类
+use crate::utils::file;
 use std::fs;
-use std::path::Path;
 use std::path::PathBuf;
 use tauri::{command, AppHandle, Manager};
 /// 获取上传目录 - 优先使用应用数据目录
@@ -80,7 +79,6 @@ pub async fn save_uploaded_image(
     let new_file_name = format!("{}.{}", &hash[..16], ext);
     // 4. 获取上传目录和相对路径
     let (upload_dir, upload_dir_rel) = get_upload_dir(&app_handle)?;
-
     // 5. 保存文件
     let file_path: PathBuf = upload_dir.join(&new_file_name);
     print!("保存文件到: {:?}", &file_path);

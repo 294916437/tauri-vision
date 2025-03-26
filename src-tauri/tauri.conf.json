@@ -22,11 +22,12 @@
         "center": true,
         "label": "main",
         "decorations": false,
-        "transparent": true
+        "transparent": true,
+        "devtools": true
       }
     ],
     "security": {
-      "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost data:",
+      "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline';",
       "assetProtocol": {
         "enable": true,
         "scope": ["$APPDATA/uploads/*", "$RESOURCE/**"]
@@ -49,7 +50,7 @@
         "installMode": "perMachine",
         "installerIcon": "icons/installer.ico",
         "languages": ["English"],
-        "installerHooks": "windows/hooks.nsi"
+        "template": "windows/template.nsi"
       }
     },
     "resources": ["resources/scripts/*", "resources/models/*"]

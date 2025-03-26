@@ -51,7 +51,7 @@ export function ModelSelector({
   }, [open]);
 
   return (
-    <div className='relative bg-amber-50' ref={containerRef}>
+    <div className='relative' ref={containerRef}>
       {/* 自定义触发按钮 - 增强悬停效果 */}
       <button
         type='button'
@@ -116,7 +116,7 @@ export function ModelSelector({
       {open && (
         <div
           id='model-selector-dropdown'
-          className='absolute z-50 w-[300px] mt-1 rounded-md border border-border bg-white dark:bg-gray-900 shadow-lg animate-in fade-in-80'
+          className='absolute z-50 w-[300px] mt-1 rounded-md border bg-amber-50 dark:bg-gray-900 shadow-lg animate-in fade-in-80'
           style={{ top: "calc(100% + 5px)", left: 0, maxHeight: "400px", overflowY: "auto" }}>
           <div className='flex flex-col '>
             {/* 搜索输入框 - 明显的背景区分 */}
@@ -144,7 +144,7 @@ export function ModelSelector({
             </div>
 
             {/* 列表项 - 统一高度和完全不透明的背景色 */}
-            <div className='max-h-[300px] overflow-auto overscroll-contain'>
+            <div className='max-h-[300px] overflow-auto overscroll-contain '>
               {filteredModels.length === 0 ? (
                 <div className='py-6 text-center text-sm bg-white dark:bg-gray-900'>
                   未找到模型

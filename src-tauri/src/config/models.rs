@@ -36,7 +36,7 @@ impl ModelRegistry {
             model_type: "ResNet34".to_string(),
             num_classes: 10,
             script_path: "resources/scripts/cifar10_val.py".to_string(),
-            is_active: true,
+            is_active: false,
         };
         self.models.insert(cifar_id.clone(), cifar_model);
 
@@ -50,7 +50,7 @@ impl ModelRegistry {
             model_type: "MobileNetV3-Small".to_string(),
             num_classes: 163,
             script_path: "resources/scripts/medicine_val.py".to_string(),
-            is_active: false,
+            is_active: true,
         };
         self.models.insert(medicine_id.clone(), medicine_model);
         // 添加蘑菇模型
